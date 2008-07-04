@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: reporting.py 2 2008-07-04 15:49:31Z nicoe $"
+__revision__ = "$Id: reporting.py 4 2008-07-04 18:13:58Z nicoe $"
 __metaclass__ = type
 
 import os, sys
@@ -99,7 +99,13 @@ class Report:
     def __call__(self, obj, **kwargs):
         template = self.tmpl_loader.load(self.fpath, self.mimetype)
         data = self.data_factory(obj, **kwargs)
-        return StringIO(str(template.generate(**data)))
+        report = template.generate(**data)
+        if not isinstance(report, StringIO):
+            report = StringIO(str(report))
+        return report
+
+    def __repr__(self):
+        return '<relatorio report on %s>' % self.fpath
 
 
 class DefaultFactory:

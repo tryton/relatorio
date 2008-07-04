@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: pdf.py 2 2008-07-04 15:49:31Z nicoe $"
+__revision__ = "$Id: pdf.py 4 2008-07-04 18:13:58Z nicoe $"
 __metaclass__ = type
 
 from cStringIO import StringIO
@@ -45,4 +45,4 @@ class Template(GenshiTemplate):
         pdf = StringIO()
         pdf.write(str(parseString(self.content_template.generate(*args,
                                                                  **kwargs))))
-        return pdf.getvalue()
+        return pdf

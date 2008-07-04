@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 2 2008-07-04 15:49:31Z nicoe $"
+__revision__ = "$Id: odt.py 4 2008-07-04 18:13:58Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -147,5 +147,5 @@ class Template(GenshiTemplate):
         inzip.close()
         outzip.close()
 
-        return new_oo.getvalue()
+        return new_oo
 
