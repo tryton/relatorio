@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: pdf.py 1 2008-07-04 14:31:52Z nicoe $"
+__revision__ = "$Id: pdf.py 2 2008-07-04 15:49:31Z nicoe $"
 __metaclass__ = type
 
 from cStringIO import StringIO
@@ -27,7 +27,7 @@ from trml2pdf import parseString
 from genshi.template import Template as GenshiTemplate, MarkupTemplate
 
 
-class PDFTemplate(GenshiTemplate):
+class Template(GenshiTemplate):
 
     def __init__(self, source, filepath=None, filename=None, loader=None,
                  encoding=None, lookup='strict', allow_exec=True):

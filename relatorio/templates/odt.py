@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 1 2008-07-04 14:31:52Z nicoe $"
+__revision__ = "$Id: odt.py 2 2008-07-04 15:49:31Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -44,8 +44,8 @@ class Template(GenshiTemplate):
         content = inzip.read('content.xml')
         inzip.close()
         self.content_template = MarkupTemplate(self.add_directives(content))
-        super(OOTemplate, self).__init__(source, filepath, filename, loader,
-                                         encoding, lookup, allow_exec)
+        super(Template, self).__init__(source, filepath, filename, loader,
+                                       encoding, lookup, allow_exec)
 
     def _parse(self, source, encoding):
         pass

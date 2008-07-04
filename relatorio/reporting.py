@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: reporting.py 1 2008-07-04 14:31:52Z nicoe $"
+__revision__ = "$Id: reporting.py 2 2008-07-04 15:49:31Z nicoe $"
 __metaclass__ = type
 
 import os, sys
@@ -27,8 +27,8 @@ from cStringIO import StringIO
 from genshi.template import MarkupTemplate, TextTemplate
 from genshi.template import TemplateLoader
 
-from mimetypes.odt import Template as OOTemplate
-from mimetypes.pdf import Template as PDFTemplate
+from templates.odt import Template as OOTemplate
+from templates.pdf import Template as PDFTemplate
 
 def _absolute(path):
     "Compute the absolute path of path relative to the caller file"
