@@ -18,12 +18,12 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: reporting.py 4 2008-07-04 18:13:58Z nicoe $"
+__revision__ = "$Id: reporting.py 5 2008-07-07 09:26:24Z nicoe $"
 __metaclass__ = type
 
 import os, sys
 import warnings
-from cStringIO import StringIO
+import cStringIO
 from genshi.template import MarkupTemplate, TextTemplate
 from genshi.template import TemplateLoader
 
@@ -100,7 +100,7 @@ class Report:
         template = self.tmpl_loader.load(self.fpath, self.mimetype)
         data = self.data_factory(obj, **kwargs)
         report = template.generate(**data)
-        if not isinstance(report, StringIO):
+        if not isinstance(report, (cStringIO.InputType, cStringIO.OutputType)):
             report = StringIO(str(report))
         return report
 
