@@ -1,11 +1,32 @@
 # -*- encoding: utf-8 -*-
-from distutils.core import setup
+import relatorio
+from setuptools import setup, find_packages
 
-# Probably a lot to do here
 setup(
-    name="ohreport",
-    url="http://www.openhex.org",
+    name="relatorio",
+    url="http://relatorio.openhex.org",
     author="Nicolas Évrard",
-    author_email="nicoe@altern.org",
-    description="A reporting library based on genshi and reportlab"
-)
+    author_email="nicoe@openhex.org",
+    description="A templating library able to output odt and pdf files",
+    long_description="""
+relatorio
+========
+
+A templating library which provides a way to easily output odt and pdf file.
+
+relatorio also provides a report repository allowing you to link python objects
+and report together, find reports by mimetypes/name/pyhon objects.
+""",
+    license="GPL License",
+    version=relatorio.__version__,
+    packages=find_packages(exclude=['tests', 'examples']),
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: GNU General Public License (GPL)",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Topic :: Software Development :: Libraries :: Python Modules"
+        "Topic :: Text Processing",
+    ],
+    test_suite="nose.collector")
