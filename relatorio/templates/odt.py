@@ -18,11 +18,12 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 4 2008-07-04 18:13:58Z nicoe $"
+__revision__ = "$Id: odt.py 9 2008-07-08 19:23:12Z nicoe $"
 __metaclass__ = type
 
 import os
 import re
+import md5
 import zipfile
 from cStringIO import StringIO
 
@@ -31,9 +32,28 @@ from genshi.template import Template as GenshiTemplate, MarkupTemplate
 
 NS = {'text': 'urn:oasis:names:tc:opendocument:xmlns:text:1.0',
       'table': 'urn:oasis:names:tc:opendocument:xmlns:table:1.0',
+      'draw': 'urn:oasis:names:tc:opendocument:xmlns:drawing:1.0',
+      'xlink': 'http://www.w3.org/1999/xlink',
       'py': 'http://genshi.edgewall.org/',
       }
 GENSHI_TAGS = re.compile(r'<(/)?(for|choose|otherwise|when|if|with)( (\w+)="(.*)"|)>')
+EXTENSIONS = {'image/png': 'png',
+              'image/jpeg': 'jpg',
+              'image/bmp': 'bmp',
+              'image/gif': 'gif',
+              'image/tiff': 'tif',
+              'image/xbm': 'xbm',
+             }
+
+def _make_href(zip):
+    def attr_maker(expr, name):
+        bitstream, mimetype = expr
+        name = md5.new(name).hexdigest()
+        path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
+        bitstream.seek(0)
+        zip.writestr(path, bitstream.read())
+        return {'{%s}href' % NS['xlink']: path}
+    return attr_maker
 
 
 class Template(GenshiTemplate):
@@ -57,6 +77,15 @@ class Template(GenshiTemplate):
         tree = lxml.etree.parse(StringIO(content))
         root = tree.getroot()
 
+        self._handle_placeholders(tree)
+        self._handle_images(tree)
+        return lxml.etree.tostring(tree)
+
+    def _handle_placeholders(self, tree):
+        """
+        Will treat all placeholders tag (py:if/for/choose/when/otherwise)
+        tags
+        """
         # First we create the list of all the placeholders nodes.
         # If this is node matches a genshi directive it is put apart for
         # further processing.
@@ -129,13 +158,27 @@ class Template(GenshiTemplate):
                 ancestor.remove(outermost_c_ancestor)
             else:
                 p.attrib['{%s}replace' % NS['py']] = directive
-        return lxml.etree.tostring(tree)
+
+    def _handle_images(self, tree):
+        for draw in tree.xpath('//draw:frame', namespaces=NS):
+            d_name = draw.attrib['{%s}name' % NS['draw']]
+            if d_name.startswith('image: '):
+                attr_expr = "make_href(%s, '%s')" % (d_name[7:], d_name[7:])
+                attributes = {}
+                attributes['{%s}attrs' % NS['py']] = attr_expr
+                image_node = lxml.etree.Element('{%s}image' % NS['draw'],
+                                                attrib=attributes,
+                                                nsmap=NS)
+                draw.replace(draw[0], image_node)
+
 
     def generate(self, *args, **kwargs):
-        content = str(self.content_template.generate(*args, **kwargs))
         new_oo = StringIO()
         inzip = zipfile.ZipFile(self.filepath)
         outzip = zipfile.ZipFile(new_oo, 'w')
+
+        kwargs['make_href'] = _make_href(outzip)
+        content = str(self.content_template.generate(*args, **kwargs))
 
         for f in inzip.infolist():
             if f.filename == 'content.xml':

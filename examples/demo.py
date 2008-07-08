@@ -1,4 +1,5 @@
 import operator
+from cStringIO import StringIO
 import relatorio
 
 class Invoice(dict):
@@ -46,7 +47,8 @@ inv = Invoice(customer={'name': 'John Bonham',
                       'amount': -20},
                     ],
               id='MZY-20080703',
-              status='late')
+              status='late',
+              trombine=(file('bouteille.png', 'r'), 'image/png'))
 
 
 _, basic_report = repos.reports[Invoice]['basic']
