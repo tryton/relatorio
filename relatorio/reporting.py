@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: reporting.py 5 2008-07-07 09:26:24Z nicoe $"
+__revision__ = "$Id: reporting.py 13 2008-07-10 16:41:20Z ged $"
 __metaclass__ = type
 
 import os, sys
@@ -89,7 +89,7 @@ class MIMETemplateLoader(TemplateLoader):
 class Report:
     """Report is a simple interface on top of a rendering template.
     """
-    
+
     def __init__(self, path, mimetype, factory, loader):
         self.fpath = path
         self.mimetype = mimetype
@@ -123,7 +123,7 @@ class ReportRepository:
     The report are indexed in this object by the object class they are working
     on and the name given to it by the user.
     """
-    
+
     def __init__(self, datafactory=DefaultFactory):
         self.reports = {}
         self.default_factory = datafactory
