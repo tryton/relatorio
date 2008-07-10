@@ -6,7 +6,7 @@ class Invoice(dict):
 
     @property
     def total(self):
-        return reduce(operator.add, (l['amount'] for l in self['lines']), 0)
+        return sum(l['amount'] for l in self['lines'])
 
     @property
     def vat(self):
