@@ -21,7 +21,7 @@ and report together, find reports by mimetypes/name/pyhon objects.
     version=relatorio.__version__,
     packages=find_packages(exclude=['tests', 'examples']),
     install_requires=[
-        "Genshi >= 0.4"
+        "Genshi >= 0.5"
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
