@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: reporting.py 13 2008-07-10 16:41:20Z ged $"
+__revision__ = "$Id: reporting.py 14 2008-07-14 22:09:55Z nicoe $"
 __metaclass__ = type
 
 import os, sys
@@ -27,8 +27,15 @@ import cStringIO
 from genshi.template import MarkupTemplate, TextTemplate
 from genshi.template import TemplateLoader
 
+from templates import NullTemplate
 from templates.odt import Template as OOTemplate
-from templates.pdf import Template as PDFTemplate
+
+try:
+    from templates.pdf import Template as PDFTemplate
+except ImportError:
+    PDFTemplate = NullTemplate
+    warnings.warn("trml2pdf is not installed on your system. You will not "
+                  "be able to create PDF files.")
 
 def _absolute(path):
     "Compute the absolute path of path relative to the caller file"

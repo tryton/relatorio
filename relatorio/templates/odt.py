@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 9 2008-07-08 19:23:12Z nicoe $"
+__revision__ = "$Id: odt.py 14 2008-07-14 22:09:55Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -45,15 +45,20 @@ EXTENSIONS = {'image/png': 'png',
               'image/xbm': 'xbm',
              }
 
-def _make_href(zip):
-    def attr_maker(expr, name):
+class ImageHref:
+    
+    def __init__(self, zipfile):
+        self.zip = zipfile
+        self.count = 0
+
+    def __call__(self, expr, name):
         bitstream, mimetype = expr
-        name = md5.new(name).hexdigest()
+        name = md5.new('%s-%s' % (name, self.count)).hexdigest()
+        self.count += 1
         path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
         bitstream.seek(0)
-        zip.writestr(path, bitstream.read())
+        self.zip.writestr(path, bitstream.read())
         return {'{%s}href' % NS['xlink']: path}
-    return attr_maker
 
 
 class Template(GenshiTemplate):
@@ -177,7 +182,7 @@ class Template(GenshiTemplate):
         inzip = zipfile.ZipFile(self.filepath)
         outzip = zipfile.ZipFile(new_oo, 'w')
 
-        kwargs['make_href'] = _make_href(outzip)
+        kwargs['make_href'] = ImageHref(outzip)
         content = str(self.content_template.generate(*args, **kwargs))
 
         for f in inzip.infolist():
