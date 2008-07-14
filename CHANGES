@@ -1,2 +1,9 @@
+0.1.1 - 20080715
+ * Added an image handling feature (thanks to b2ck.com for the idea and bits of
+   implementation)
+ * Added the dependancy on Genshi
+ * test for trml2pdf presence
+ * standardize the way the template object returns their results
+
 0.1.0 - 20080707
 Initial version
