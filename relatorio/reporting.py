@@ -18,24 +18,15 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: reporting.py 14 2008-07-14 22:09:55Z nicoe $"
+__revision__ = "$Id: reporting.py 17 2008-07-15 10:26:58Z nicoe $"
 __metaclass__ = type
 
 import os, sys
 import warnings
 import cStringIO
-from genshi.template import MarkupTemplate, TextTemplate
+
+import pkg_resources
 from genshi.template import TemplateLoader
-
-from templates import NullTemplate
-from templates.odt import Template as OOTemplate
-
-try:
-    from templates.pdf import Template as PDFTemplate
-except ImportError:
-    PDFTemplate = NullTemplate
-    warnings.warn("trml2pdf is not installed on your system. You will not "
-                  "be able to create PDF files.")
 
 def _absolute(path):
     "Compute the absolute path of path relative to the caller file"
@@ -65,10 +56,7 @@ class MIMETemplateLoader(TemplateLoader):
     templates to load.
     """
 
-    factories = {'pdf': PDFTemplate,
-                 'oo.org': OOTemplate,
-                 'text': TextTemplate,
-                 'markup': MarkupTemplate}
+    factories = {}
 
     mime_func = [_guess_type]
 
@@ -91,6 +79,19 @@ class MIMETemplateLoader(TemplateLoader):
         cls.factories[abbr_mimetype] = template_factory
         if id_function is not None:
             cls.mime_func.append(id_function)
+
+    @classmethod
+    def load_template_engines(cls):
+        """loads template engines found via PEAK's pkg_resources"""
+        for entrypoint in pkg_resources.iter_entry_points(
+                                        'relatorio.templates.engines'):
+            try:
+                engine = entrypoint.load()
+                cls.add_factory(entrypoint.name, engine)
+            except ImportError:
+                warnings.warn('We were not able to load %s. You will not '
+                              'be able to use its functonlities' %
+                              entrypoint.module_name)
 
 
 class Report:
