@@ -19,7 +19,7 @@ and report together, find reports by mimetypes/name/pyhon objects.
 """,
     license="GPL License",
     version=relatorio.__version__,
-    packages=find_packages(exclude=['tests', 'examples']),
+    packages=find_packages(exclude=['relatorio.tests', 'examples']),
     install_requires=[
         "Genshi >= 0.5"
     ],
