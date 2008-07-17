@@ -32,4 +32,12 @@ and report together, find reports by mimetypes/name/pyhon objects.
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Text Processing",
     ],
-    test_suite="nose.collector")
+    test_suite="nose.collector",
+    entry_points={
+        "relatorio.templates.engines": [
+            "oo.org = relatorio.templates.odt:Template",
+            "pdf = relatorio.templates.pdf:Template",
+            "text = genshi.template:TextTemplate",
+            "xml = genshi.template:MarkupTemplate",
+        ],
+    })
