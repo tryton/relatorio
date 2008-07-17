@@ -1,3 +1,7 @@
+0.2.0 - 20080717
+ * Added support for templating in the styles.xml file
+ * Much more genshi-esque way to do stuff in the odt templating
+
 0.1.1 - 20080715
  * Added an image handling feature (thanks to b2ck.com for the idea and bits of
    implementation)
