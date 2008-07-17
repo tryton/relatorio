@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 ###############################################################################
 #
 # Copyright (c) 2007, 2008 OpenHex SPRL. (http://openhex.com) All Rights
@@ -18,7 +19,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: test_odt.py 1 2008-07-04 14:31:52Z nicoe $"
+__revision__ = "$Id: test_odt.py 19 2008-07-17 00:11:51Z nicoe $"
 
 import os
 from cStringIO import StringIO
@@ -26,8 +27,19 @@ from cStringIO import StringIO
 import lxml.etree
 from nose.tools import *
 from genshi.template import MarkupTemplate
+from genshi.filters import Translator
 
-from mimetypes.odt import OOTemplate, NS
+from templates.odt import Template, NS
+
+def pseudo_gettext(string):
+    catalog = {'Mes collègues sont:': 'My collegues are:',
+               'Bonjour,': 'Hello,',
+               'Je suis un test de templating en odt.': 
+                'I am an odt templating test',
+               'Felix da housecat': unicode('Félix le chat de la maison',
+                                            'utf8'),
+              }
+    return catalog.get(string, string)
 
 
 class TestOOTemplating(object):
@@ -35,7 +47,16 @@ class TestOOTemplating(object):
     def setup(self):
         thisdir = os.path.dirname(__file__)
         filepath = os.path.join(thisdir, 'test.odt')
-        self.oot = OOTemplate(file(filepath), filepath)
+        self.oot = Template(file(filepath), filepath)
+        self.data = {'first_name': 'Trente',
+                     'last_name': unicode('Møller', 'utf8'),
+                     'ville': unicode('Liège', 'utf8'),
+                     'friends': [{'first_name': 'Camille', 
+                                  'last_name': 'Salauhpe'},
+                                 {'first_name': 'Mathias',
+                                  'last_name': 'Lechat'}],
+                     'hobbies': ['Music', 'Dancing', 'DJing'],
+                     'animals': ['Felix da housecat', 'Dog eat Dog']}
 
     def test_init(self):
         assert_true(isinstance(self.oot.content_template, MarkupTemplate))
@@ -49,3 +70,21 @@ class TestOOTemplating(object):
         root_parsed = lxml.etree.parse(StringIO(parsed)).getroot()
         eq_(root_parsed[0].attrib['{http://genshi.edgewall.org/}replace'], 
             'foo')
+
+    def test_generate(self):
+        stream = self.oot.generate(**self.data)
+        rendered = stream.events.render()
+        assert 'Bonjour,' in rendered
+        assert 'Trente' in rendered
+        assert 'Møller' in rendered
+        assert 'Dog eat Dog' in rendered
+        assert 'Felix da housecat' in rendered
+
+    def test_filters(self):
+        stream = self.oot.generate(**self.data)
+        translated = stream.filter(Translator(pseudo_gettext))
+        content_xml = translated.events.render()
+        assert "Hello," in content_xml
+        assert "I am an odt templating test" in content_xml
+        assert 'Felix da housecat' not in content_xml
+        assert 'Félix le chat de la maison' in content_xml

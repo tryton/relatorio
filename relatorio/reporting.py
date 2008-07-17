@@ -18,12 +18,12 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: reporting.py 17 2008-07-15 10:26:58Z nicoe $"
+__revision__ = "$Id: reporting.py 19 2008-07-17 00:11:51Z nicoe $"
 __metaclass__ = type
 
 import os, sys
 import warnings
-import cStringIO
+from cStringIO import StringIO
 
 import pkg_resources
 from genshi.template import TemplateLoader
@@ -103,14 +103,12 @@ class Report:
         self.mimetype = mimetype
         self.data_factory = factory
         self.tmpl_loader = loader
+        self.filters = []
 
     def __call__(self, obj, **kwargs):
         template = self.tmpl_loader.load(self.fpath, self.mimetype)
         data = self.data_factory(obj, **kwargs)
-        report = template.generate(**data)
-        if not isinstance(report, (cStringIO.InputType, cStringIO.OutputType)):
-            report = StringIO(str(report))
-        return report
+        return template.generate(**data).filter(*self.filters)
 
     def __repr__(self):
         return '<relatorio report on %s>' % self.fpath

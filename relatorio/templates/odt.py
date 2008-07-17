@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 14 2008-07-14 22:09:55Z nicoe $"
+__revision__ = "$Id: odt.py 19 2008-07-17 00:11:51Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -28,6 +28,7 @@ import zipfile
 from cStringIO import StringIO
 
 import lxml.etree
+import genshi
 from genshi.template import Template as GenshiTemplate, MarkupTemplate
 
 NS = {'text': 'urn:oasis:names:tc:opendocument:xmlns:text:1.0',
@@ -178,22 +179,45 @@ class Template(GenshiTemplate):
 
 
     def generate(self, *args, **kwargs):
-        new_oo = StringIO()
-        inzip = zipfile.ZipFile(self.filepath)
-        outzip = zipfile.ZipFile(new_oo, 'w')
+        serializer = OOSerializer(self.filepath)
+        kwargs['make_href'] = ImageHref(serializer.outzip)
+        content_stream = self.content_template.generate(*args, **kwargs)
 
-        kwargs['make_href'] = ImageHref(outzip)
-        content = str(self.content_template.generate(*args, **kwargs))
+        return OOStream(content_stream, serializer)
 
-        for f in inzip.infolist():
+
+class OOStream(genshi.core.Stream):
+
+    def __init__(self, content_stream, serializer):
+        self.events = content_stream
+        self.serializer = serializer
+
+    def render(self, method=None, encoding='utf-8', out=None, **kwargs):
+        return self.serializer(self.events)
+
+    def serialize(self, method, **kwargs):
+        return self.render(method, **kwargs)
+
+    def __or__(self, function):
+        return OOStream(self.events | function, self.serializer)
+
+
+class OOSerializer:
+
+    def __init__(self, oo_path):
+        self.inzip = zipfile.ZipFile(oo_path)
+        self.new_oo = StringIO()
+        self.outzip = zipfile.ZipFile(self.new_oo, 'w')
+
+    def __call__(self, stream):
+        for f in self.inzip.infolist():
             if f.filename == 'content.xml':
                 s = StringIO()
-                s.write(str(content))
-                outzip.writestr('content.xml', s.getvalue())
+                s.write(str(stream))
+                self.outzip.writestr('content.xml', s.getvalue())
             else:
-                outzip.writestr(f, inzip.read(f.filename))
-        inzip.close()
-        outzip.close()
+                self.outzip.writestr(f, self.inzip.read(f.filename))
+        self.inzip.close()
+        self.outzip.close()
 
-        return new_oo
-
+        return self.new_oo

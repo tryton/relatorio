@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: test_api.py 1 2008-07-04 14:31:52Z nicoe $"
+__revision__ = "$Id: test_api.py 19 2008-07-17 00:11:51Z nicoe $"
 
 import os
 from nose.tools import *
@@ -26,11 +26,15 @@ from nose.tools import *
 from reporting import (ReportRepository, Report, MIMETemplateLoader,
                        DefaultFactory, _absolute)
 
+
 class StubObject(object):
 
     def __init__(self, **kwargs):
         for key, val in kwargs.iteritems():
             setattr(self, key, val)
+
+def setup():
+    MIMETemplateLoader.load_template_engines()
 
 
 class TestRepository(object):
@@ -73,7 +77,7 @@ class TestReport(object):
     def test_report(self):
         "Testing the report generation"
         a = StubObject(name='OpenHex')
-        eq_(self.report(a).getvalue(), 'Hello OpenHex.\n')
+        eq_(self.report(a).render(), 'Hello OpenHex.\n')
 
     def test_factory(self):
         "Testing the data factory"
@@ -91,9 +95,9 @@ class TestReport(object):
                         'text/plain', MyFactory(), self.loader)
 
         a = StubObject(name='Foo')
-        eq_(report(a, time="One o'clock").getvalue(), 
+        eq_(report(a, time="One o'clock").render(), 
             "Hi Foo,\nIt's One o'clock to 2 !\n")
-        eq_(report(a, time="One o'clock", y=4).getvalue(), 
+        eq_(report(a, time="One o'clock", y=4).render(), 
             "Hi Foo,\nIt's One o'clock to 5 !\n")
         assert_raises(TypeError, report, a) 
 

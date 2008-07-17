@@ -1,6 +1,5 @@
 [relatorio.templates.engines]
 oo.org = relatorio.templates.odt:Template
-trml = relatorio.templates.trml:Template
 pdf = relatorio.templates.pdf:Template
 text = genshi.template:TextTemplate
 xml = genshi.template:MarkupTemplate
