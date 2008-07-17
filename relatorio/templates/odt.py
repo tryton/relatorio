@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 19 2008-07-17 00:11:51Z nicoe $"
+__revision__ = "$Id: odt.py 21 2008-07-17 16:46:24Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -29,7 +29,8 @@ from cStringIO import StringIO
 
 import lxml.etree
 import genshi
-from genshi.template import Template as GenshiTemplate, MarkupTemplate
+import genshi.output
+from genshi.template import MarkupTemplate
 
 NS = {'text': 'urn:oasis:names:tc:opendocument:xmlns:text:1.0',
       'table': 'urn:oasis:names:tc:opendocument:xmlns:table:1.0',
@@ -45,6 +46,9 @@ EXTENSIONS = {'image/png': 'png',
               'image/tiff': 'tif',
               'image/xbm': 'xbm',
              }
+
+_encode = genshi.output.encode
+
 
 class ImageHref:
     
@@ -62,22 +66,22 @@ class ImageHref:
         return {'{%s}href' % NS['xlink']: path}
 
 
-class Template(GenshiTemplate):
-
-    def __init__(self, source, filepath=None, filename=None, loader=None,
-                 encoding=None, lookup='strict', allow_exec=True):
-        inzip = zipfile.ZipFile(filepath)
-        content = inzip.read('content.xml')
-        inzip.close()
-        self.content_template = MarkupTemplate(self.add_directives(content))
-        super(Template, self).__init__(source, filepath, filename, loader,
-                                       encoding, lookup, allow_exec)
+class Template(MarkupTemplate):
 
     def _parse(self, source, encoding):
-        pass
+        inzip = zipfile.ZipFile(self.filepath)
+        content = inzip.read('content.xml')
+        styles = inzip.read('styles.xml')
+        inzip.close()
 
-    def _prepare(self, stream):
-        return []
+        content = super(Template, self)._parse(self.add_directives(content),
+                                               encoding)
+        styles = super(Template, self)._parse(self.add_directives(styles),
+                                              encoding)
+        return [(genshi.core.PI, ('relatorio', 'styles.xml'), None)] +\
+                styles +\
+                [(genshi.core.PI, ('relatorio', 'content.xml'), None)] +\
+                content
 
     def add_directives(self, content):
         tree = lxml.etree.parse(StringIO(content))
@@ -85,7 +89,7 @@ class Template(GenshiTemplate):
 
         self._handle_placeholders(tree)
         self._handle_images(tree)
-        return lxml.etree.tostring(tree)
+        return StringIO(lxml.etree.tostring(tree))
 
     def _handle_placeholders(self, tree):
         """
@@ -181,9 +185,9 @@ class Template(GenshiTemplate):
     def generate(self, *args, **kwargs):
         serializer = OOSerializer(self.filepath)
         kwargs['make_href'] = ImageHref(serializer.outzip)
-        content_stream = self.content_template.generate(*args, **kwargs)
+        generate_all = super(Template, self).generate(*args, **kwargs)
 
-        return OOStream(content_stream, serializer)
+        return OOStream(generate_all, serializer)
 
 
 class OOStream(genshi.core.Stream):
@@ -208,13 +212,20 @@ class OOSerializer:
         self.inzip = zipfile.ZipFile(oo_path)
         self.new_oo = StringIO()
         self.outzip = zipfile.ZipFile(self.new_oo, 'w')
+        self.xml_serializer = genshi.output.XMLSerializer()
 
     def __call__(self, stream):
+        files = {'styles.xml': [], 'content.xml': []}
+        for kind, data, pos in stream:
+            if kind == genshi.core.PI and data[0] == 'relatorio':
+                stream_for = data[1]
+            files[stream_for].append((kind, data, pos))
+
         for f in self.inzip.infolist():
-            if f.filename == 'content.xml':
-                s = StringIO()
-                s.write(str(stream))
-                self.outzip.writestr('content.xml', s.getvalue())
+            if f.filename in files:
+                stream = files[f.filename]
+                self.outzip.writestr(f.filename, 
+                                     _encode(self.xml_serializer(stream)))
             else:
                 self.outzip.writestr(f, self.inzip.read(f.filename))
         self.inzip.close()

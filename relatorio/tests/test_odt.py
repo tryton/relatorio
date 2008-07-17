@@ -19,15 +19,17 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: test_odt.py 19 2008-07-17 00:11:51Z nicoe $"
+__revision__ = "$Id: test_odt.py 21 2008-07-17 16:46:24Z nicoe $"
 
 import os
 from cStringIO import StringIO
 
 import lxml.etree
 from nose.tools import *
-from genshi.template import MarkupTemplate
+import genshi
 from genshi.filters import Translator
+from genshi.core import PI
+from genshi.template.eval import UndefinedError
 
 from templates.odt import Template, NS
 
@@ -38,6 +40,7 @@ def pseudo_gettext(string):
                 'I am an odt templating test',
                'Felix da housecat': unicode('Félix le chat de la maison',
                                             'utf8'),
+               'We sell stuffs': u'On vend des brols',
               }
     return catalog.get(string, string)
 
@@ -48,43 +51,63 @@ class TestOOTemplating(object):
         thisdir = os.path.dirname(__file__)
         filepath = os.path.join(thisdir, 'test.odt')
         self.oot = Template(file(filepath), filepath)
-        self.data = {'first_name': 'Trente',
+        self.data = {'first_name': u'Trente',
                      'last_name': unicode('Møller', 'utf8'),
                      'ville': unicode('Liège', 'utf8'),
-                     'friends': [{'first_name': 'Camille', 
-                                  'last_name': 'Salauhpe'},
-                                 {'first_name': 'Mathias',
-                                  'last_name': 'Lechat'}],
-                     'hobbies': ['Music', 'Dancing', 'DJing'],
-                     'animals': ['Felix da housecat', 'Dog eat Dog']}
+                     'friends': [{'first_name': u'Camille', 
+                                  'last_name': u'Salauhpe'},
+                                 {'first_name': u'Mathias',
+                                  'last_name': u'Lechat'}],
+                     'hobbies': [u'Music', u'Dancing', u'DJing'],
+                     'animals': [u'Felix da housecat', u'Dog eat Dog'],
+                     'footer': u'We sell stuffs'}
 
     def test_init(self):
-        assert_true(isinstance(self.oot.content_template, MarkupTemplate))
+        "Testing the correct handling of the styles.xml and content.xml files"
+        ok_(isinstance(self.oot.stream, list))
+        eq_(self.oot.stream[0], (PI, ('relatorio', 'styles.xml'), None))
+        ok_((PI, ('relatorio', 'content.xml'), None) in self.oot.stream)
 
     def test_directives(self):
+        "Testing the directives interpolation"
         xml = '''<a xmlns="urn:a" xmlns:text="%s">
         <text:placeholder>&lt;foo&gt;</text:placeholder>
         </a>''' % NS['text']
         parsed = self.oot.add_directives(xml) 
         root = lxml.etree.parse(StringIO(xml)).getroot()
-        root_parsed = lxml.etree.parse(StringIO(parsed)).getroot()
+        root_parsed = lxml.etree.parse(parsed).getroot()
         eq_(root_parsed[0].attrib['{http://genshi.edgewall.org/}replace'], 
             'foo')
 
-    def test_generate(self):
+    def test_styles(self):
+        "Testing that styles get rendered"
         stream = self.oot.generate(**self.data)
         rendered = stream.events.render()
-        assert 'Bonjour,' in rendered
-        assert 'Trente' in rendered
-        assert 'Møller' in rendered
-        assert 'Dog eat Dog' in rendered
-        assert 'Felix da housecat' in rendered
+        ok_('We sell stuffs' in rendered)
+
+        dico = self.data.copy()
+        del dico['footer']
+        stream = self.oot.generate(**dico)
+        assert_raises(UndefinedError, lambda: stream.events.render())
+
+    def test_generate(self):
+        "Testing that content get rendered"
+        stream = self.oot.generate(**self.data)
+        rendered = stream.events.render()
+        ok_('Bonjour,' in rendered)
+        ok_('Trente' in rendered)
+        ok_('Møller' in rendered)
+        ok_('Dog eat Dog' in rendered)
+        ok_('Felix da housecat' in rendered)
 
     def test_filters(self):
+        "Testing the filters with the Translator filter"
         stream = self.oot.generate(**self.data)
         translated = stream.filter(Translator(pseudo_gettext))
-        content_xml = translated.events.render()
-        assert "Hello," in content_xml
-        assert "I am an odt templating test" in content_xml
-        assert 'Felix da housecat' not in content_xml
-        assert 'Félix le chat de la maison' in content_xml
+        translated_xml = translated.events.render()
+        ok_("Hello," in translated_xml)
+        ok_("I am an odt templating test" in translated_xml)
+        ok_('Felix da housecat' not in translated_xml)
+        ok_('Félix le chat de la maison' in translated_xml)
+        ok_('We sell stuffs' not in translated_xml)
+        ok_('On vend des brols' in translated_xml)
