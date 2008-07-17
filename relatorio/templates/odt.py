@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 21 2008-07-17 16:46:24Z nicoe $"
+__revision__ = "$Id: odt.py 22 2008-07-17 18:21:49Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -38,7 +38,7 @@ NS = {'text': 'urn:oasis:names:tc:opendocument:xmlns:text:1.0',
       'xlink': 'http://www.w3.org/1999/xlink',
       'py': 'http://genshi.edgewall.org/',
       }
-GENSHI_TAGS = re.compile(r'<(/)?(for|choose|otherwise|when|if|with)( (\w+)="(.*)"|)>')
+GENSHI_TAGS = re.compile(r'''<(/)?(for|choose|otherwise|when|if|with)( (\w+)=["'](.*)["']|)>''')
 EXTENSIONS = {'image/png': 'png',
               'image/jpeg': 'jpg',
               'image/bmp': 'bmp',
