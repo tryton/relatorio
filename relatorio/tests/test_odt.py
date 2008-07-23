@@ -19,7 +19,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: test_odt.py 25 2008-07-23 10:38:25Z nicoe $"
+__revision__ = "$Id: test_odt.py 26 2008-07-23 12:19:49Z nicoe $"
 
 import os
 from cStringIO import StringIO
@@ -64,6 +64,7 @@ class TestOOTemplating(object):
                                  'image/jpeg'),
                                 (file(os.path.join(thisdir, 'two.png')),
                                  'image/png')],
+                     'oeuf': file(os.path.join(thisdir, 'egg.jpg')),
                      'footer': u'We sell stuffs'}
 
     def test_init(self):
@@ -124,14 +125,16 @@ class TestOOTemplating(object):
         tree = lxml.etree.parse(StringIO(rendered[content_idx + 25:]))
         root = tree.getroot()
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
-        eq_(len(images), 2)
+        eq_(len(images), 3)
         eq_(images[0].attrib['{%s}name' % self.oot.namespaces['draw']],
+            "image: (oeuf, 'image/png')")
+        eq_(images[1].attrib['{%s}name' % self.oot.namespaces['draw']],
             'image: img')
-        eq_(images[0].attrib['{%s}width' % self.oot.namespaces['svg']],
-            '1.732cm')
-        eq_(images[0].attrib['{%s}height' % self.oot.namespaces['svg']],
-            '1.513cm')
         eq_(images[1].attrib['{%s}width' % self.oot.namespaces['svg']],
             '1.732cm')
         eq_(images[1].attrib['{%s}height' % self.oot.namespaces['svg']],
+            '1.513cm')
+        eq_(images[2].attrib['{%s}width' % self.oot.namespaces['svg']],
+            '1.732cm')
+        eq_(images[2].attrib['{%s}height' % self.oot.namespaces['svg']],
             '1.513cm')

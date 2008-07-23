@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 25 2008-07-23 10:38:25Z nicoe $"
+__revision__ = "$Id: odt.py 26 2008-07-23 12:19:49Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -176,7 +176,7 @@ class Template(MarkupTemplate):
         for draw in tree.xpath('//draw:frame', namespaces=self.namespaces):
             d_name = draw.attrib['{%s}name' % self.namespaces['draw']]
             if d_name.startswith('image: '):
-                attr_expr = "make_href(%s, '%s')" % (d_name[7:], d_name[7:])
+                attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
                 attributes = {}
                 attributes['{%s}attrs' % self.namespaces['py']] = attr_expr
                 image_node = lxml.etree.Element('{%s}image' % self.namespaces['draw'],
