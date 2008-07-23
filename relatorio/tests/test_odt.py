@@ -19,7 +19,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: test_odt.py 21 2008-07-17 16:46:24Z nicoe $"
+__revision__ = "$Id: test_odt.py 25 2008-07-23 10:38:25Z nicoe $"
 
 import os
 from cStringIO import StringIO
@@ -31,7 +31,7 @@ from genshi.filters import Translator
 from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
-from templates.odt import Template, NS
+from templates.odt import Template
 
 def pseudo_gettext(string):
     catalog = {'Mes collègues sont:': 'My collegues are:',
@@ -60,6 +60,10 @@ class TestOOTemplating(object):
                                   'last_name': u'Lechat'}],
                      'hobbies': [u'Music', u'Dancing', u'DJing'],
                      'animals': [u'Felix da housecat', u'Dog eat Dog'],
+                     'images': [(file(os.path.join(thisdir, 'one.jpg')),
+                                 'image/jpeg'),
+                                (file(os.path.join(thisdir, 'two.png')),
+                                 'image/png')],
                      'footer': u'We sell stuffs'}
 
     def test_init(self):
@@ -70,9 +74,9 @@ class TestOOTemplating(object):
 
     def test_directives(self):
         "Testing the directives interpolation"
-        xml = '''<a xmlns="urn:a" xmlns:text="%s">
+        xml = '''<b:a xmlns:b="urn:b" xmlns:text="%s" xmlns:draw="urn:draw">
         <text:placeholder>&lt;foo&gt;</text:placeholder>
-        </a>''' % NS['text']
+        </b:a>''' % 'urn:text'
         parsed = self.oot.add_directives(xml) 
         root = lxml.etree.parse(StringIO(xml)).getroot()
         root_parsed = lxml.etree.parse(parsed).getroot()
@@ -111,3 +115,23 @@ class TestOOTemplating(object):
         ok_('Félix le chat de la maison' in translated_xml)
         ok_('We sell stuffs' not in translated_xml)
         ok_('On vend des brols' in translated_xml)
+
+    def test_images(self):
+        "Testing the image replacement directive"
+        stream = self.oot.generate(**self.data)
+        rendered = stream.events.render()
+        content_idx = rendered.find('<?relatorio content.xml?>')
+        tree = lxml.etree.parse(StringIO(rendered[content_idx + 25:]))
+        root = tree.getroot()
+        images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
+        eq_(len(images), 2)
+        eq_(images[0].attrib['{%s}name' % self.oot.namespaces['draw']],
+            'image: img')
+        eq_(images[0].attrib['{%s}width' % self.oot.namespaces['svg']],
+            '1.732cm')
+        eq_(images[0].attrib['{%s}height' % self.oot.namespaces['svg']],
+            '1.513cm')
+        eq_(images[1].attrib['{%s}width' % self.oot.namespaces['svg']],
+            '1.732cm')
+        eq_(images[1].attrib['{%s}height' % self.oot.namespaces['svg']],
+            '1.513cm')

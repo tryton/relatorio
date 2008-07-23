@@ -18,7 +18,7 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 22 2008-07-17 18:21:49Z nicoe $"
+__revision__ = "$Id: odt.py 25 2008-07-23 10:38:25Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -32,12 +32,6 @@ import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
 
-NS = {'text': 'urn:oasis:names:tc:opendocument:xmlns:text:1.0',
-      'table': 'urn:oasis:names:tc:opendocument:xmlns:table:1.0',
-      'draw': 'urn:oasis:names:tc:opendocument:xmlns:drawing:1.0',
-      'xlink': 'http://www.w3.org/1999/xlink',
-      'py': 'http://genshi.edgewall.org/',
-      }
 GENSHI_TAGS = re.compile(r'''<(/)?(for|choose|otherwise|when|if|with)( (\w+)=["'](.*)["']|)>''')
 EXTENSIONS = {'image/png': 'png',
               'image/jpeg': 'jpg',
@@ -63,10 +57,16 @@ class ImageHref:
         path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
         bitstream.seek(0)
         self.zip.writestr(path, bitstream.read())
-        return {'{%s}href' % NS['xlink']: path}
+        return {'{http://www.w3.org/1999/xlink}href': path}
 
 
 class Template(MarkupTemplate):
+
+    def __init__(self, source, filepath=None, filename=None, loader=None,
+                 encoding=None, lookup='strict', allow_exec=True):
+        self.namespaces = {}
+        super(Template, self).__init__(source, filepath, filename, loader,
+                                       encoding, lookup, allow_exec)
 
     def _parse(self, source, encoding):
         inzip = zipfile.ZipFile(self.filepath)
@@ -86,6 +86,8 @@ class Template(MarkupTemplate):
     def add_directives(self, content):
         tree = lxml.etree.parse(StringIO(content))
         root = tree.getroot()
+        self.namespaces = root.nsmap.copy()
+        self.namespaces['py'] = 'http://genshi.edgewall.org/'
 
         self._handle_placeholders(tree)
         self._handle_images(tree)
@@ -100,7 +102,8 @@ class Template(MarkupTemplate):
         # If this is node matches a genshi directive it is put apart for
         # further processing.
         genshi_directives, placeholders = [], []
-        for statement in tree.xpath('//text:placeholder', namespaces=NS):
+        for statement in tree.xpath('//text:placeholder',
+                                    namespaces=self.namespaces):
             match_obj = GENSHI_TAGS.match(statement.text)
             if match_obj is not None:
                 genshi_directives.append(statement)
@@ -149,10 +152,10 @@ class Template(MarkupTemplate):
                         ancestor = n
                         break
 
-                genshi_node = lxml.etree.Element('{%s}%s' % (NS['py'],
+                genshi_node = lxml.etree.Element('{%s}%s' % (self.namespaces['py'],
                                                              directive),
                                                  attrib={attr: a_val},
-                                                 nsmap=NS)
+                                                 nsmap=self.namespaces)
                 can_append = False
                 for node in ancestor.iterchildren():
                     if node in o_ancestors:
@@ -167,18 +170,18 @@ class Template(MarkupTemplate):
                 ancestor.replace(outermost_o_ancestor, genshi_node)
                 ancestor.remove(outermost_c_ancestor)
             else:
-                p.attrib['{%s}replace' % NS['py']] = directive
+                p.attrib['{%s}replace' % self.namespaces['py']] = directive
 
     def _handle_images(self, tree):
-        for draw in tree.xpath('//draw:frame', namespaces=NS):
-            d_name = draw.attrib['{%s}name' % NS['draw']]
+        for draw in tree.xpath('//draw:frame', namespaces=self.namespaces):
+            d_name = draw.attrib['{%s}name' % self.namespaces['draw']]
             if d_name.startswith('image: '):
                 attr_expr = "make_href(%s, '%s')" % (d_name[7:], d_name[7:])
                 attributes = {}
-                attributes['{%s}attrs' % NS['py']] = attr_expr
-                image_node = lxml.etree.Element('{%s}image' % NS['draw'],
+                attributes['{%s}attrs' % self.namespaces['py']] = attr_expr
+                image_node = lxml.etree.Element('{%s}image' % self.namespaces['draw'],
                                                 attrib=attributes,
-                                                nsmap=NS)
+                                                nsmap=self.namespaces)
                 draw.replace(draw[0], image_node)
 
 
