@@ -18,7 +18,6 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: __init__.py 14 2008-07-14 22:09:55Z nicoe $"
 __metaclass__ = type
 
 from genshi.template import Template as GenshiTemplate, MarkupTemplate

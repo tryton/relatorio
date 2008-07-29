@@ -18,7 +18,6 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: pdf.py 4 2008-07-04 18:13:58Z nicoe $"
 __metaclass__ = type
 
 from cStringIO import StringIO

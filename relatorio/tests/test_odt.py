@@ -19,7 +19,6 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: test_odt.py 26 2008-07-23 12:19:49Z nicoe $"
 
 import os
 from cStringIO import StringIO

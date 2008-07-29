@@ -18,7 +18,6 @@
 #
 ###############################################################################
 
-__revision__ = "$Id: odt.py 26 2008-07-23 12:19:49Z nicoe $"
 __metaclass__ = type
 
 import os
@@ -48,15 +47,14 @@ class ImageHref:
     
     def __init__(self, zipfile):
         self.zip = zipfile
-        self.count = 0
 
     def __call__(self, expr, name):
         bitstream, mimetype = expr
-        name = md5.new('%s-%s' % (name, self.count)).hexdigest()
-        self.count += 1
-        path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
         bitstream.seek(0)
-        self.zip.writestr(path, bitstream.read())
+        file_content = bitstream.read()
+        name = md5.new(file_content).hexdigest()
+        path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
+        self.zip.writestr(path, file_content)
         return {'{http://www.w3.org/1999/xlink}href': path}
 
 
