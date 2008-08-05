@@ -27,6 +27,7 @@ import subprocess
 from cStringIO import StringIO
 
 import genshi
+import genshi.output
 from genshi.template import Template as GenshiTemplate, NewTextTemplate
 
 TEXEXEC_PATH = '/usr/bin/texexec'
