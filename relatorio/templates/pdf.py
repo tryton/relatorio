@@ -20,28 +20,67 @@
 
 __metaclass__ = type
 
+import os
+import shutil
+import tempfile
+import subprocess
 from cStringIO import StringIO
-from trml2pdf import parseString
 
-from genshi.template import Template as GenshiTemplate, MarkupTemplate
+import genshi
+from genshi.template import Template as GenshiTemplate, NewTextTemplate
+
+TEXEXEC_PATH = '/usr/bin/texexec'
+_encode = genshi.output.encode
 
 
-class Template(GenshiTemplate):
+class Template(NewTextTemplate):
 
     def __init__(self, source, filepath=None, filename=None, loader=None,
                  encoding=None, lookup='strict', allow_exec=True):
-        self.content_template = MarkupTemplate(source, filepath, filename,
-                                               loader, encoding, lookup,
-                                               allow_exec)
-
-    def _parse(self, source, encoding):
-        pass
-    
-    def _prepare(self, stream):
-        return []
-
+        if source is None:
+            source = open(filepath, 'r').read()
+        super(Template, self).__init__(source, filepath, filename, loader,
+                                       encoding, lookup, allow_exec)
     def generate(self, *args, **kwargs):
+        generated = super(Template, self).generate(*args, **kwargs)
+        return PDFStream(generated, PDFSerializer())
+
+
+class PDFStream(genshi.core.Stream):
+
+    def __init__(self, content_stream, serializer):
+        self.events = content_stream
+        self.serializer = serializer
+
+    def render(self, method=None, encoding='utf-8', out=None, **kwargs):
+        return self.serializer(self.events)
+
+    def serialize(self, method, **kwargs):
+        return self.render(method, **kwargs)
+
+    def __or__(self, function):
+        return PDFStream(self.events | function, self.serializer)
+
+
+class PDFSerializer:
+
+    def __init__(self):
+        self.working_dir = tempfile.mkdtemp(prefix='relatorio')
+        self.tex_file = os.path.join(self.working_dir, 'report.tex')
+        self.pdf_file = os.path.join(self.working_dir, 'report.pdf')
+        self.text_serializer = genshi.output.TextSerializer()
+
+    def __call__(self, stream):
+        tex_file = open(self.tex_file, 'w')
+        tex_file.write(_encode(self.text_serializer(stream)))
+        tex_file.close()
+
+        p = subprocess.check_call([TEXEXEC_PATH, '--purge', 'report.tex'],
+                                  cwd=self.working_dir)
+
         pdf = StringIO()
-        pdf.write(str(parseString(self.content_template.generate(*args,
-                                                                 **kwargs))))
+        pdf.write(open(self.pdf_file, 'r').read())
+
+        shutil.rmtree(self.working_dir, ignore_errors=True)
         return pdf
+
