@@ -1,3 +1,9 @@
+0.3.0 - 20080806
+ * Generation of pdf files through ConTeXt
+ * Better support of cell value in opendocument table cells
+ * Better namespace support in opendocument files
+ * Better image support in opendocument files
+
 0.2.0 - 20080717
  * Added support for templating in the styles.xml file
  * Much more genshi-esque way to do stuff in the odt templating
