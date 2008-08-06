@@ -134,7 +134,7 @@ class Template(MarkupTemplate):
             else:
                 genshi_pairs[inserted.pop()][1] = statement
 
-        for p, parsed in text_a:
+        for a_node, parsed in text_a:
             expr, c_dir, directive, attr, a_val = parsed
 
             if directive is not None:
@@ -152,7 +152,7 @@ class Template(MarkupTemplate):
                     # pass the closing statements
                     continue
                 for pair in genshi_pairs:
-                    if pair[0] == p:
+                    if pair[0] == a_node:
                         break
                 opening, closing = pair
 
@@ -182,8 +182,8 @@ class Template(MarkupTemplate):
                 ancestor.remove(outermost_c_ancestor)
             else:
                 # It's not a genshi statement it's a python expression
-                p.attrib['{%s}replace' % self.namespaces['py']] = expr
-                parent = p.getparent().getparent()
+                a_node.attrib['{%s}replace' % self.namespaces['py']] = expr
+                parent = a_node.getparent().getparent()
                 if parent is None or parent.tag != table_cell_tag:
                     continue
                 if parent.attrib.get(office_valuetype, 'string') != 'string':
