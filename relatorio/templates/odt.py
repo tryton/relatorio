@@ -41,6 +41,7 @@ EXTENSIONS = {'image/png': 'png',
              }
 
 _encode = genshi.output.encode
+ETElement = lxml.etree.Element
 
 
 class ImageHref:
@@ -118,6 +119,13 @@ class Template(MarkupTemplate):
             else:
                 genshi_pairs[inserted.pop()][1] = statement
 
+        # Some tag nam constants
+        table_cell_tag = '{%s}table-cell' % self.namespaces['table']
+        attrib_name = '{%s}attrs' % self.namespaces['py']
+        office_name = '{%s}value' % self.namespaces['office']
+        office_valuetype = '{%s}value-type' % self.namespaces['office']
+        genshi_name = '{%s}replace' % self.namespaces['py']
+
         for p, match_obj in placeholders:
             if match_obj is not None:
                 c_dir, directive, _, attr, a_val = match_obj.groups()
@@ -150,10 +158,10 @@ class Template(MarkupTemplate):
                         ancestor = n
                         break
 
-                genshi_node = lxml.etree.Element('{%s}%s' % (self.namespaces['py'],
-                                                             directive),
-                                                 attrib={attr: a_val},
-                                                 nsmap=self.namespaces)
+                genshi_node = ETElement('{%s}%s' % (self.namespaces['py'],
+                                                    directive), 
+                                        attrib={attr: a_val},
+                                        nsmap=self.namespaces)
                 can_append = False
                 for node in ancestor.iterchildren():
                     if node in o_ancestors:
@@ -169,6 +177,13 @@ class Template(MarkupTemplate):
                 ancestor.remove(outermost_c_ancestor)
             else:
                 p.attrib['{%s}replace' % self.namespaces['py']] = directive
+                parent = p.getparent().getparent()
+                if parent is None or parent.tag != table_cell_tag:
+                    continue
+                if parent.attrib.get(office_valuetype, 'string') != 'string':
+                    dico = "{'%s': %s}" % (office_name, directive)
+                    parent.attrib[attrib_name] = dico
+                    parent.attrib.pop(office_name, None)
 
     def _handle_images(self, tree):
         for draw in tree.xpath('//draw:frame', namespaces=self.namespaces):
@@ -177,9 +192,9 @@ class Template(MarkupTemplate):
                 attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
                 attributes = {}
                 attributes['{%s}attrs' % self.namespaces['py']] = attr_expr
-                image_node = lxml.etree.Element('{%s}image' % self.namespaces['draw'],
-                                                attrib=attributes,
-                                                nsmap=self.namespaces)
+                image_node = ETElement('{%s}image' % self.namespaces['draw'],
+                                       attrib=attributes,
+                                       nsmap=self.namespaces)
                 draw.replace(draw[0], image_node)
 
 

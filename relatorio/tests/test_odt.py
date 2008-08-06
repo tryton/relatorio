@@ -74,7 +74,8 @@ class TestOOTemplating(object):
 
     def test_directives(self):
         "Testing the directives interpolation"
-        xml = '''<b:a xmlns:b="urn:b" xmlns:text="%s" xmlns:draw="urn:draw">
+        xml = '''<b:a xmlns:b="urn:b" xmlns:text="%s" xmlns:draw="urn:draw"
+        xmlns:table="urn:table" xmlns:office="urn:office">
         <text:placeholder>&lt;foo&gt;</text:placeholder>
         </b:a>''' % 'urn:text'
         parsed = self.oot.add_directives(xml) 
