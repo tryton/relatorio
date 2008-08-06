@@ -235,6 +235,7 @@ class OOSerializer:
         for kind, data, pos in stream:
             if kind == genshi.core.PI and data[0] == 'relatorio':
                 stream_for = data[1]
+                continue
             files[stream_for].append((kind, data, pos))
 
         for f in self.inzip.infolist():

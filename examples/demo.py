@@ -18,8 +18,8 @@ repos.add_report(Invoice, 'application/vnd.oasis.opendocument.text',
                  'basic.odt', report_name='basic')
 repos.add_report(Invoice, 'application/vnd.oasis.opendocument.text',
                  'invoice.odt', report_name='complicated')
-repos.add_report(Invoice, 'application/vnd.oasis.opendocument.text',
-                 'test.odt', report_name='test')
+repos.add_report(Invoice, 'application/vnd.oasis.opendocument.spreadsheet',
+                 'pivot.ods', report_name='pivot')
 
 inv = Invoice(customer={'name': 'John Bonham',
                         'address': {'street': 'Smirnov street',
@@ -52,6 +52,10 @@ inv = Invoice(customer={'name': 'John Bonham',
 
 
 _, basic_report = repos.reports[Invoice]['basic']
-file('bonham_basic.odt', 'w').write(basic_report(inv).getvalue())
+file('bonham_basic.odt', 'w').write(basic_report(inv).render().getvalue())
 _, report = repos.reports[Invoice]['complicated']
-file('bonham_complicated.odt', 'w').write(report(inv).getvalue())
+file('bonham_complicated.odt', 'w').write(report(inv).render().getvalue())
+
+# ODS
+_, ods_report = repos.reports[Invoice]['pivot']
+file('bonham_pivot.ods', 'w').write(ods_report(inv).render().getvalue())
