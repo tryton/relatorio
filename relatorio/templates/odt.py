@@ -55,7 +55,8 @@ class ImageHref:
         file_content = bitstream.read()
         name = md5.new(file_content).hexdigest()
         path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
-        self.zip.writestr(path, file_content)
+        if path not in self.zip.namelist():
+            self.zip.writestr(path, file_content)
         return {'{http://www.w3.org/1999/xlink}href': path}
 
 
