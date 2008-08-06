@@ -30,7 +30,7 @@ from genshi.filters import Translator
 from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
-from templates.odt import Template
+from templates.opendocument import Template
 
 def pseudo_gettext(string):
     catalog = {'Mes collègues sont:': 'My collegues are:',
