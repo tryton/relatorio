@@ -23,6 +23,7 @@ __metaclass__ = type
 import os
 import re
 import md5
+import urllib
 import zipfile
 from cStringIO import StringIO
 
@@ -31,7 +32,7 @@ import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
 
-GENSHI_TAGS = re.compile(r'''<(/)?(for|choose|otherwise|when|if|with)( (\w+)=["'](.*)["']|)>''')
+GENSHI_TAGS = re.compile(r'''relatorio://((/)?(for|choose|otherwise|when|if|with)( (\w+)=["'](.*)["']|)|.*)''')
 EXTENSIONS = {'image/png': 'png',
               'image/jpeg': 'jpg',
               'image/bmp': 'bmp',
@@ -89,63 +90,66 @@ class Template(MarkupTemplate):
         self.namespaces = root.nsmap.copy()
         self.namespaces['py'] = 'http://genshi.edgewall.org/'
 
-        self._handle_placeholders(tree)
+        self._handle_text_a(tree)
         self._handle_images(tree)
         return StringIO(lxml.etree.tostring(tree))
 
-    def _handle_placeholders(self, tree):
+    def _handle_text_a(self, tree):
         """
-        Will treat all placeholders tag (py:if/for/choose/when/otherwise)
+        Will treat all text:a tag (py:if/for/choose/when/otherwise)
         tags
         """
-        # First we create the list of all the placeholders nodes.
-        # If this is node matches a genshi directive it is put apart for
-        # further processing.
-        genshi_directives, placeholders = [], []
-        for statement in tree.xpath('//text:placeholder',
-                                    namespaces=self.namespaces):
-            match_obj = GENSHI_TAGS.match(statement.text)
-            if match_obj is not None:
-                genshi_directives.append(statement)
-            placeholders.append((statement, match_obj))
+        # Some tag name constants
+        table_cell_tag = '{%s}table-cell' % self.namespaces['table']
+        attrib_name = '{%s}attrs' % self.namespaces['py']
+        office_name = '{%s}value' % self.namespaces['office']
+        office_valuetype = '{%s}value-type' % self.namespaces['office']
+        genshi_name = '{%s}replace' % self.namespaces['py']
+        xlink_href_attrib = '{%s}href' % self.namespaces['xlink']
+
+        # First we create the list of all the text:a nodes.
+        # If this node href matches the relatorio URL it is kept.
+        # If this node href matches a genshi directive it is kept for further
+        # processing.
+        genshi_directives, text_a = [], []
+        for statement in tree.xpath('//text:a', namespaces=self.namespaces):
+            href = urllib.unquote(statement.attrib[xlink_href_attrib])
+            match_obj = GENSHI_TAGS.match(href)
+            if match_obj is None:
+                continue
+            expr, closing, directive, _, attr, attr_val = match_obj.groups()
+            if directive is not None:
+                genshi_directives.append((statement, href))
+            text_a.append((statement, 
+                           (expr, closing, directive, attr, attr_val)))
 
         # Then we match the opening and closing directives together
         idx = 0
         genshi_pairs, inserted = [], []
-        for statement in genshi_directives:
-            if not statement.text.startswith('</'):
+        for statement, href in genshi_directives:
+            if not href.startswith('relatorio:///'):
                 genshi_pairs.append([statement, None])
                 inserted.append(idx)
                 idx += 1
             else:
                 genshi_pairs[inserted.pop()][1] = statement
 
-        # Some tag nam constants
-        table_cell_tag = '{%s}table-cell' % self.namespaces['table']
-        attrib_name = '{%s}attrs' % self.namespaces['py']
-        office_name = '{%s}value' % self.namespaces['office']
-        office_valuetype = '{%s}value-type' % self.namespaces['office']
-        genshi_name = '{%s}replace' % self.namespaces['py']
+        for p, parsed in text_a:
+            expr, c_dir, directive, attr, a_val = parsed
 
-        for p, match_obj in placeholders:
-            if match_obj is not None:
-                c_dir, directive, _, attr, a_val = match_obj.groups()
-            else:
-                c_dir, directive, _, attr, a_val = (None, p.text[1:-1], None,
-                                                    None, None)
-
-            if p in genshi_directives:
-                # If the placeholder is a for statement:
+            if directive is not None:
+                # If the text:a is a genshi directive statement:
                 #    - we operate only on opening statement
                 #    - we find the nearest ancestor of the closing and opening
                 #      statement
-                #    - we create a <py:for> node
+                #    - we create a <py:xxx> node
                 #    - we add all the node between the opening and closing
                 #      statements to this new node
                 #    - we replace the opening statement by the <py:for> node
                 #    - we delete the closing statement
 
                 if c_dir is not None:
+                    # pass the closing statements
                     continue
                 for pair in genshi_pairs:
                     if pair[0] == p:
@@ -177,12 +181,15 @@ class Template(MarkupTemplate):
                 ancestor.replace(outermost_o_ancestor, genshi_node)
                 ancestor.remove(outermost_c_ancestor)
             else:
-                p.attrib['{%s}replace' % self.namespaces['py']] = directive
+                # It's not a genshi statement it's a python expression
+                p.attrib['{%s}replace' % self.namespaces['py']] = expr
                 parent = p.getparent().getparent()
                 if parent is None or parent.tag != table_cell_tag:
                     continue
                 if parent.attrib.get(office_valuetype, 'string') != 'string':
-                    dico = "{'%s': %s}" % (office_name, directive)
+                    # The grand-parent tag is a table cell we set the
+                    # office:value attribute of this cell
+                    dico = "{'%s': %s}" % (office_name, expr)
                     parent.attrib[attrib_name] = dico
                     parent.attrib.pop(office_name, None)
 

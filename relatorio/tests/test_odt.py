@@ -75,8 +75,9 @@ class TestOOTemplating(object):
     def test_directives(self):
         "Testing the directives interpolation"
         xml = '''<b:a xmlns:b="urn:b" xmlns:text="%s" xmlns:draw="urn:draw"
-        xmlns:table="urn:table" xmlns:office="urn:office">
-        <text:placeholder>&lt;foo&gt;</text:placeholder>
+        xmlns:table="urn:table" xmlns:office="urn:office"
+        xmlns:xlink="urn:xlink">
+        <text:a xlink:href="relatorio://foo">foo</text:a>
         </b:a>''' % 'urn:text'
         parsed = self.oot.add_directives(xml) 
         root = lxml.etree.parse(StringIO(xml)).getroot()
