@@ -27,6 +27,9 @@ import urllib
 import zipfile
 from cStringIO import StringIO
 
+import warnings
+warnings.filterwarnings('always', module='relatorio.templates.opendocument')
+
 import lxml.etree
 import genshi
 import genshi.output
@@ -107,10 +110,23 @@ class Template(MarkupTemplate):
         self.namespaces = root.nsmap.copy()
         self.namespaces['py'] = 'http://genshi.edgewall.org/'
 
+        self._invert_style(tree)
         self._handle_text_a(tree)
         self._handle_images(tree)
         self._handle_innerdocs(tree)
         return StringIO(lxml.etree.tostring(tree))
+
+    def _invert_style(self, tree):
+        xpath_expr = "//text:a[starts-with(@xlink:href, 'relatorio://')]"\
+                     "/text:span"
+        for span in tree.xpath(xpath_expr, namespaces=self.namespaces):
+            text_a = span.getparent()
+            outer = text_a.getparent()
+            text_a.text = span.text
+            span.text = ''
+            text_a.remove(span)
+            outer.replace(text_a, span)
+            span.append(text_a)
 
     def _handle_text_a(self, tree):
         """
@@ -130,12 +146,15 @@ class Template(MarkupTemplate):
         # If this node href matches a genshi directive it is kept for further
         # processing.
         genshi_directives, text_a = [], []
-        for statement in tree.xpath('//text:a', namespaces=self.namespaces):
+        xpath_expr = "//text:a[starts-with(@xlink:href, 'relatorio://')]"
+        for statement in tree.xpath(xpath_expr, namespaces=self.namespaces):
             href = urllib.unquote(statement.attrib[xlink_href_attrib])
             match_obj = GENSHI_TAGS.match(href)
-            if match_obj is None:
-                continue
             expr, closing, directive, _, attr, attr_val = match_obj.groups()
+            if expr != statement.text:
+                txt = statement.text or ''
+                warnings.warn('url and text do not match in %s: %s != %s' 
+                              % (self.filepath, expr, txt.encode('utf-8')))
             if directive is not None:
                 genshi_directives.append((statement, href))
             text_a.append((statement, 
@@ -215,23 +234,21 @@ class Template(MarkupTemplate):
         draw_name = '{%s}name' % self.namespaces['draw']
         draw_image = '{%s}image' % self.namespaces['draw']
         python_attrs = '{%s}attrs' % self.namespaces['py']
-        for draw in tree.xpath('//draw:frame', namespaces=self.namespaces):
-            d_name = draw.attrib.get(draw_name, '')
-            if d_name.startswith('image: '):
-                attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
-                image_node = ETElement(draw_image, 
-                                       attrib={python_attrs: attr_expr},
-                                       nsmap=self.namespaces)
-                draw.replace(draw[0], image_node)
+        xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
+        for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
+            d_name = draw.attrib[draw_name]
+            attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
+            image_node = ETElement(draw_image, 
+                                   attrib={python_attrs: attr_expr},
+                                   nsmap=self.namespaces)
+            draw.replace(draw[0], image_node)
 
     def _handle_innerdocs(self, tree):
         href_attrib = '{%s}href' % self.namespaces['xlink']
-        show_attrib = '{%s}show' % self.namespaces['xlink']
-        for draw in tree.xpath('//draw:object', namespaces=self.namespaces):
-            href = draw.attrib.get(href_attrib, '')
-            show = draw.attrib.get(show_attrib, '')
-            if href.startswith('./') and show == 'embed':
-                self.inner_docs.append(href[2:])
+        xpath_expr = "//draw:object[starts-with(@xlink:href, './')" \
+                     "and @xlink:show='embed']"
+        for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
+            self.inner_docs.append(draw.attrib[href_attrib][2:])
 
     def generate(self, *args, **kwargs):
         serializer = OOSerializer(self.filepath)
