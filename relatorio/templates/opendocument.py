@@ -212,15 +212,15 @@ class Template(MarkupTemplate):
                     parent.attrib.pop(office_name, None)
 
     def _handle_images(self, tree):
+        draw_name = '{%s}name' % self.namespaces['draw']
+        draw_image = '{%s}image' % self.namespaces['draw']
+        python_attrs = '{%s}attrs' % self.namespaces['py']
         for draw in tree.xpath('//draw:frame', namespaces=self.namespaces):
-            d_name = draw.attrib.get('{%s}name' % self.namespaces['draw'],
-                                     '')
+            d_name = draw.attrib.get(draw_name, '')
             if d_name.startswith('image: '):
                 attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
-                attributes = {}
-                attributes['{%s}attrs' % self.namespaces['py']] = attr_expr
-                image_node = ETElement('{%s}image' % self.namespaces['draw'],
-                                       attrib=attributes,
+                image_node = ETElement(draw_image, 
+                                       attrib={python_attrs: attr_expr},
                                        nsmap=self.namespaces)
                 draw.replace(draw[0], image_node)
 
