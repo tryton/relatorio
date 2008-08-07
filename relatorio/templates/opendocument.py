@@ -66,6 +66,7 @@ class Template(MarkupTemplate):
     def __init__(self, source, filepath=None, filename=None, loader=None,
                  encoding=None, lookup='strict', allow_exec=True):
         self.namespaces = {}
+        self.inner_docs = []
         super(Template, self).__init__(source, filepath, filename, loader,
                                        encoding, lookup, allow_exec)
 
@@ -73,16 +74,32 @@ class Template(MarkupTemplate):
         inzip = zipfile.ZipFile(self.filepath)
         content = inzip.read('content.xml')
         styles = inzip.read('styles.xml')
-        inzip.close()
 
-        content = super(Template, self)._parse(self.add_directives(content),
-                                               encoding)
-        styles = super(Template, self)._parse(self.add_directives(styles),
-                                              encoding)
-        return [(genshi.core.PI, ('relatorio', 'styles.xml'), None)] +\
-                styles +\
-                [(genshi.core.PI, ('relatorio', 'content.xml'), None)] +\
-                content
+        genshi_obj = super(Template, self)
+        content = genshi_obj._parse(self.add_directives(content), encoding)
+        styles = genshi_obj._parse(self.add_directives(styles), encoding)
+        content_files= [('content.xml', content)]
+        styles_files = [('styles.xml', styles)]
+
+        while self.inner_docs:
+            doc = self.inner_docs.pop()
+            c_path, s_path = doc + '/content.xml', doc + '/styles.xml'
+            content = inzip.read(c_path)
+            styles = inzip.read(s_path)
+            
+            c_parsed = genshi_obj._parse(self.add_directives(content), encoding)
+            s_parsed = genshi_obj._parse(self.add_directives(styles), encoding)
+
+            content_files.append((c_path, c_parsed))
+            styles_files.append((s_path, s_parsed))
+
+        inzip.close()
+        parsed = []
+        for fpath, fparsed in content_files + styles_files:
+            parsed.append((genshi.core.PI, ('relatorio', fpath), None))
+            parsed += fparsed
+
+        return parsed
 
     def add_directives(self, content):
         tree = lxml.etree.parse(StringIO(content))
@@ -92,6 +109,7 @@ class Template(MarkupTemplate):
 
         self._handle_text_a(tree)
         self._handle_images(tree)
+        self._handle_innerdocs(tree)
         return StringIO(lxml.etree.tostring(tree))
 
     def _handle_text_a(self, tree):
@@ -195,7 +213,8 @@ class Template(MarkupTemplate):
 
     def _handle_images(self, tree):
         for draw in tree.xpath('//draw:frame', namespaces=self.namespaces):
-            d_name = draw.attrib['{%s}name' % self.namespaces['draw']]
+            d_name = draw.attrib.get('{%s}name' % self.namespaces['draw'],
+                                     '')
             if d_name.startswith('image: '):
                 attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
                 attributes = {}
@@ -205,6 +224,14 @@ class Template(MarkupTemplate):
                                        nsmap=self.namespaces)
                 draw.replace(draw[0], image_node)
 
+    def _handle_innerdocs(self, tree):
+        href_attrib = '{%s}href' % self.namespaces['xlink']
+        show_attrib = '{%s}show' % self.namespaces['xlink']
+        for draw in tree.xpath('//draw:object', namespaces=self.namespaces):
+            href = draw.attrib.get(href_attrib, '')
+            show = draw.attrib.get(show_attrib, '')
+            if href.startswith('./') and show == 'embed':
+                self.inner_docs.append(href[2:])
 
     def generate(self, *args, **kwargs):
         serializer = OOSerializer(self.filepath)
@@ -239,15 +266,17 @@ class OOSerializer:
         self.xml_serializer = genshi.output.XMLSerializer()
 
     def __call__(self, stream):
-        files = {'styles.xml': [], 'content.xml': []}
+        files = {}
         for kind, data, pos in stream:
             if kind == genshi.core.PI and data[0] == 'relatorio':
                 stream_for = data[1]
                 continue
-            files[stream_for].append((kind, data, pos))
+            files.setdefault(stream_for, []).append((kind, data, pos))
 
         for f in self.inzip.infolist():
-            if f.filename in files:
+            if f.filename.startswith('ObjectReplacements'):
+                continue
+            elif f.filename in files:
                 stream = files[f.filename]
                 self.outzip.writestr(f.filename, 
                                      _encode(self.xml_serializer(stream)))
