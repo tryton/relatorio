@@ -69,7 +69,7 @@ class TestOOTemplating(object):
     def test_init(self):
         "Testing the correct handling of the styles.xml and content.xml files"
         ok_(isinstance(self.oot.stream, list))
-        eq_(self.oot.stream[0], (PI, ('relatorio', 'styles.xml'), None))
+        eq_(self.oot.stream[0], (PI, ('relatorio', 'content.xml'), None))
         ok_((PI, ('relatorio', 'content.xml'), None) in self.oot.stream)
 
     def test_directives(self):
@@ -122,8 +122,8 @@ class TestOOTemplating(object):
         "Testing the image replacement directive"
         stream = self.oot.generate(**self.data)
         rendered = stream.events.render()
-        content_idx = rendered.find('<?relatorio content.xml?>')
-        tree = lxml.etree.parse(StringIO(rendered[content_idx + 25:]))
+        styles_idx = rendered.find('<?relatorio styles.xml?>')
+        tree = lxml.etree.parse(StringIO(rendered[25:styles_idx]))
         root = tree.getroot()
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
         eq_(len(images), 3)

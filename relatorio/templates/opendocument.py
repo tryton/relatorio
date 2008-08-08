@@ -35,7 +35,7 @@ import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
 
-GENSHI_TAGS = re.compile(r'''relatorio://((/)?(for|choose|otherwise|when|if|with)( (\w+)=["'](.*)["']|)|.*)''')
+GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with)( (\w+)=["'](.*)["']|)|.*)''')
 EXTENSIONS = {'image/png': 'png',
               'image/jpeg': 'jpg',
               'image/bmp': 'bmp',
@@ -46,6 +46,10 @@ EXTENSIONS = {'image/png': 'png',
 
 _encode = genshi.output.encode
 ETElement = lxml.etree.Element
+
+
+class OOTemplateError(genshi.template.base.TemplateSyntaxError):
+    pass
 
 
 class ImageHref:
@@ -111,7 +115,7 @@ class Template(MarkupTemplate):
         self.namespaces['py'] = 'http://genshi.edgewall.org/'
 
         self._invert_style(tree)
-        self._handle_text_a(tree)
+        self._handle_relatorio_tags(tree)
         self._handle_images(tree)
         self._handle_innerdocs(tree)
         return StringIO(lxml.etree.tostring(tree))
@@ -128,9 +132,46 @@ class Template(MarkupTemplate):
             outer.replace(text_a, span)
             span.append(text_a)
 
-    def _handle_text_a(self, tree):
+    def _relatorio_statements(self, tree):
+        # If this node href matches the relatorio URL it is kept.
+        # If this node href matches a genshi directive it is kept for further
+        # processing.
+        r_statements, genshi_dir = [], []
+        xlink_href_attrib = '{%s}href' % self.namespaces['xlink']
+        text_a = '{%s}a' % self.namespaces['text']
+        placeholder = '{%s}placeholder' % self.namespaces['text']
+
+        s_xpath = "//text:a[starts-with(@xlink:href, 'relatorio://')]" \
+                  "| //text:placeholder"
+        for statement in tree.xpath(s_xpath, namespaces=self.namespaces):
+            if statement.tag == placeholder:
+                expr = statement.text[1:-1]
+            elif statement.tag == text_a:
+                expr = urllib.unquote(statement.attrib[xlink_href_attrib][12:])
+
+            if not expr:
+                raise OOTemplateError("No expression in the tag",
+                                      self.filepath)
+            elif not statement.text:
+                warnings.warn('No statement text in %s' % self.filepath)
+            elif expr != statement.text and statement.tag == text_a:
+                warnings.warn('url and text do not match in %s: %s != %s' 
+                              % (self.filepath, expr,
+                                 statement.text.encode('utf-8')))
+
+            match_obj = GENSHI_EXPR.match(expr)
+
+            expr, closing, directive, _, attr, attr_val = match_obj.groups()
+            if directive is not None:
+                genshi_dir.append((statement, closing))
+            r_statements.append((statement, 
+                                 (expr, closing, directive, attr, attr_val)))
+
+        return r_statements, genshi_dir
+
+    def _handle_relatorio_tags(self, tree):
         """
-        Will treat all text:a tag (py:if/for/choose/when/otherwise)
+        Will treat all relatorio tag (py:if/for/choose/when/otherwise)
         tags
         """
         # Some tag name constants
@@ -138,44 +179,25 @@ class Template(MarkupTemplate):
         attrib_name = '{%s}attrs' % self.namespaces['py']
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
-        genshi_name = '{%s}replace' % self.namespaces['py']
-        xlink_href_attrib = '{%s}href' % self.namespaces['xlink']
+        genshi_replace = '{%s}replace' % self.namespaces['py']
 
-        # First we create the list of all the text:a nodes.
-        # If this node href matches the relatorio URL it is kept.
-        # If this node href matches a genshi directive it is kept for further
-        # processing.
-        genshi_directives, text_a = [], []
-        xpath_expr = "//text:a[starts-with(@xlink:href, 'relatorio://')]"
-        for statement in tree.xpath(xpath_expr, namespaces=self.namespaces):
-            href = urllib.unquote(statement.attrib[xlink_href_attrib])
-            match_obj = GENSHI_TAGS.match(href)
-            expr, closing, directive, _, attr, attr_val = match_obj.groups()
-            if expr != statement.text:
-                txt = statement.text or ''
-                warnings.warn('url and text do not match in %s: %s != %s' 
-                              % (self.filepath, expr, txt.encode('utf-8')))
-            if directive is not None:
-                genshi_directives.append((statement, href))
-            text_a.append((statement, 
-                           (expr, closing, directive, attr, attr_val)))
-
-        # Then we match the opening and closing directives together
+        r_statements, genshi_directives = self._relatorio_statements(tree)
+        # We match the opening and closing directives together
         idx = 0
         genshi_pairs, inserted = [], []
-        for statement, href in genshi_directives:
-            if not href.startswith('relatorio:///'):
+        for statement, closing in genshi_directives:
+            if closing is None:
                 genshi_pairs.append([statement, None])
                 inserted.append(idx)
                 idx += 1
             else:
                 genshi_pairs[inserted.pop()][1] = statement
 
-        for a_node, parsed in text_a:
+        for r_node, parsed in r_statements:
             expr, c_dir, directive, attr, a_val = parsed
 
             if directive is not None:
-                # If the text:a is a genshi directive statement:
+                # If the node is a genshi directive statement:
                 #    - we operate only on opening statement
                 #    - we find the nearest ancestor of the closing and opening
                 #      statement
@@ -189,7 +211,7 @@ class Template(MarkupTemplate):
                     # pass the closing statements
                     continue
                 for pair in genshi_pairs:
-                    if pair[0] == a_node:
+                    if pair[0] == r_node:
                         break
                 opening, closing = pair
 
@@ -219,8 +241,8 @@ class Template(MarkupTemplate):
                 ancestor.remove(outermost_c_ancestor)
             else:
                 # It's not a genshi statement it's a python expression
-                a_node.attrib['{%s}replace' % self.namespaces['py']] = expr
-                parent = a_node.getparent().getparent()
+                r_node.attrib[genshi_replace] = expr
+                parent = r_node.getparent().getparent()
                 if parent is None or parent.tag != table_cell_tag:
                     continue
                 if parent.attrib.get(office_valuetype, 'string') != 'string':
