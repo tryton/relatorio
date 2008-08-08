@@ -22,6 +22,8 @@ repos.add_report(Invoice, 'application/vnd.oasis.opendocument.spreadsheet',
                  'pivot.ods', report_name='pivot')
 repos.add_report(Invoice, 'application/vnd.oasis.opendocument.presentation',
                  'presentation.odp', report_name='presentation')
+repos.add_report(Invoice, 'application/pdf', 'basic.tex',
+                 report_name='ConTeXt')
 
 inv = Invoice(customer={'name': 'John Bonham',
                         'address': {'street': 'Smirnov street',
@@ -66,3 +68,8 @@ file('bonham_pivot.ods', 'w').write(ods_report(inv).render().getvalue())
 # ODP
 _, odp_report = repos.reports[Invoice]['presentation']
 file('bonham_presentation.odp', 'w').write(odp_report(inv).render().getvalue())
+
+#PDF
+_, pdf_report = repos.reports[Invoice]['ConTeXt']
+file('bonham_basic.pdf', 'w').write(pdf_report(inv).render().getvalue())
+
