@@ -141,6 +141,6 @@ class ReportRepository:
         reports = self.reports.setdefault(klass, {})
         report = Report(_absolute(template_path), mimetype, data_factory(),
                         self.loader)
-        reports[report_name] = mimetype, report
+        reports[report_name] = report, mimetype
         reports.setdefault(mimetype, []).append((report_name, report))
 

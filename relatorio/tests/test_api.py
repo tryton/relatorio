@@ -48,7 +48,7 @@ class TestRepository(object):
         assert_true('default' in reporting.reports[StubObject])
         assert_true('text/plain' in reporting.reports[StubObject])
 
-        mime, report = reporting.reports[StubObject]['default']
+        report, mime = reporting.reports[StubObject]['default']
         eq_(mime, 'text/plain')
         eq_(report.mimetype, 'text/plain')
         assert_true(report.fpath.endswith(os.path.join('templates', 
