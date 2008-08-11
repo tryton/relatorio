@@ -145,10 +145,12 @@ class TestOOTemplating(object):
         "Testing the regexp used to find relatorio tags"
         regexp = re.compile(GENSHI_EXPR)
         group = regexp.match('for each="foo in bar"').groups()
-        eq_(group, ('for each="foo in bar"', None, 'for', 'each="foo in bar"',
+        eq_(group, ('for each="foo in bar"', None, 'for', ' each="foo in bar"',
                     'each', 'foo in bar'))
         group = regexp.match('/for').groups()
         eq_(group, ('/for', '/', 'for', '', None, None))
+        group = regexp.match('/for ').groups()
+        eq_(group, ('/for ', '/', 'for', '', None, None))
         group = regexp.match('formatLang("en")').groups()
         eq_(group, ('formatLang("en")', None, None, None, None, None))
 
