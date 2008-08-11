@@ -21,6 +21,7 @@
 
 
 import os
+import re
 from cStringIO import StringIO
 
 import lxml.etree
@@ -30,7 +31,7 @@ from genshi.filters import Translator
 from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
-from templates.opendocument import Template
+from templates.opendocument import Template, GENSHI_EXPR
 
 def pseudo_gettext(string):
     catalog = {'Mes collègues sont:': 'My collegues are:',
@@ -139,3 +140,15 @@ class TestOOTemplating(object):
             '1.732cm')
         eq_(images[2].attrib['{%s}height' % self.oot.namespaces['svg']],
             '1.513cm')
+
+    def test_regexp(self):
+        "Testing the regexp used to find relatorio tags"
+        regexp = re.compile(GENSHI_EXPR)
+        group = regexp.match('for each="foo in bar"').groups()
+        eq_(group, ('for each="foo in bar"', None, 'for', 'each="foo in bar"',
+                    'each', 'foo in bar'))
+        group = regexp.match('/for').groups()
+        eq_(group, ('/for', '/', 'for', '', None, None))
+        group = regexp.match('formatLang("en")').groups()
+        eq_(group, ('formatLang("en")', None, None, None, None, None))
+
