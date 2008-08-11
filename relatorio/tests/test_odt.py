@@ -147,6 +147,8 @@ class TestOOTemplating(object):
         group = regexp.match('for each="foo in bar"').groups()
         eq_(group, ('for each="foo in bar"', None, 'for', ' each="foo in bar"',
                     'each', 'foo in bar'))
+        group = regexp.match('foreach="foo in bar"').groups()
+        eq_(group, ('foreach="foo in bar"', None, None, None, None, None))
         group = regexp.match('/for').groups()
         eq_(group, ('/for', '/', 'for', '', None, None))
         group = regexp.match('/for ').groups()
