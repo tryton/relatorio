@@ -24,6 +24,8 @@ repos.add_report(Invoice, 'application/vnd.oasis.opendocument.presentation',
                  'presentation.odp', report_name='presentation')
 repos.add_report(Invoice, 'application/pdf', 'basic.tex',
                  report_name='ConTeXt')
+repos.add_report(Invoice, 'image/png', 'pie_chart', report_name='pie')
+repos.add_report(Invoice, 'image/png', 'bar_chart', report_name='bar')
 
 inv = Invoice(customer={'name': 'John Bonham',
                         'address': {'street': 'Smirnov street',
@@ -41,9 +43,9 @@ inv = Invoice(customer={'name': 'John Bonham',
                       'amount': 12*13.46},
                      {'item': {'name': 'Sparkling water 25cl',
                                'reference': 'WATR-007',
-                               'price': 0.4},
+                               'price': 4},
                       'quantity': 1,
-                      'amount': 0.4},
+                      'amount': 4},
                      {'item': {'name': 'Good customer',
                                'reference': 'BONM-001',
                                'price': -20},
@@ -72,4 +74,10 @@ file('bonham_presentation.odp', 'w').write(odp_report(inv).render().getvalue())
 #PDF
 pdf_report, _ = repos.reports[Invoice]['ConTeXt']
 file('bonham_basic.pdf', 'w').write(pdf_report(inv).render().getvalue())
+
+#Image
+pie_report, _ = repos.reports[Invoice]['pie']
+file('pie.png', 'w').write(pie_report(inv).render().getvalue())
+bar_report, _ = repos.reports[Invoice]['bar']
+file('bar.png', 'w').write(bar_report(inv).render().getvalue())
 
