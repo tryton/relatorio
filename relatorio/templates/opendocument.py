@@ -35,7 +35,7 @@ import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
 
-GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with) *( (\w+)=["'](.*)["']|$)|.*)''')
+GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with)\s*(\s(\w+)=["'](.*)["']|$)|.*)''')
 EXTENSIONS = {'image/png': 'png',
               'image/jpeg': 'jpg',
               'image/bmp': 'bmp',
