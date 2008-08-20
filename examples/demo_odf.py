@@ -1,5 +1,6 @@
 from cStringIO import StringIO
 from common import Invoice, repos, inv
+import demo_chart
 
 repos.add_report(Invoice, 'application/vnd.oasis.opendocument.text',
                  'basic.odt', report_name='basic')
@@ -10,16 +11,20 @@ repos.add_report(Invoice, 'application/vnd.oasis.opendocument.spreadsheet',
 repos.add_report(Invoice, 'application/vnd.oasis.opendocument.presentation',
                  'presentation.odp', report_name='presentation')
 
-# ODT
-basic_report, _ = repos.reports[Invoice]['basic']
-file('bonham_basic.odt', 'w').write(basic_report(inv).render().getvalue())
-report, _ = repos.reports[Invoice]['complicated']
-file('bonham_complicated.odt', 'w').write(report(inv).render().getvalue())
+if __name__ == '__main__':
+    # Add a chart to the invoice
+    inv['chart'] = repos.reports[Invoice]['pie']
 
-# ODS
-ods_report, _ = repos.reports[Invoice]['pivot']
-file('bonham_pivot.ods', 'w').write(ods_report(inv).render().getvalue())
+    # ODT
+    basic_report, _ = repos.reports[Invoice]['basic']
+    file('bonham_basic.odt', 'w').write(basic_report(inv).render().getvalue())
+    report, _ = repos.reports[Invoice]['complicated']
+    file('bonham_complicated.odt', 'w').write(report(inv).render().getvalue())
 
-# ODP
-odp_report, _ = repos.reports[Invoice]['presentation']
-file('bonham_presentation.odp', 'w').write(odp_report(inv).render().getvalue())
+    # ODS
+    ods_report, _ = repos.reports[Invoice]['pivot']
+    file('bonham_pivot.ods', 'w').write(ods_report(inv).render().getvalue())
+
+    # ODP
+    odp_report, _ = repos.reports[Invoice]['presentation']
+    file('bonham_presentation.odp', 'w').write(odp_report(inv).render().getvalue())

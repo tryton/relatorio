@@ -119,9 +119,8 @@ class Report:
 class DefaultFactory:
 
     def __call__(self, obj, **kwargs):
-        data = {}
+        data = kwargs.copy()
         data['o'] = obj
-        data['args'] = kwargs
         return data
 
 
