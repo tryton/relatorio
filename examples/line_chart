@@ -6,8 +6,8 @@ options:
   padding: {bottom: 70, left: 70, right: 10, top: 10}
   axis:
     y:
-      interval: 15
-      padding: 5
+      interval: 10
+      padding: 10
     x:
       ticks:
       {% for idx, line in enumerate(o.lines) %}
@@ -15,7 +15,7 @@ options:
           label: $line.item.name
       {% end %}
 chart:
-  type: hbar
+  type: line
   width: 600
   height: 500
   dataset:
@@ -23,9 +23,4 @@ chart:
       -
       {% for idx, line in enumerate(o.lines) %}
         - [$idx, $line.amount]
-      {% end %}
-    - - Absolute sales
-      -
-      {% for idx, line in enumerate(o.lines) %}
-        - [$idx, ${abs(line.amount)}]
       {% end %}

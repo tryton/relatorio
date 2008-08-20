@@ -9,5 +9,5 @@ chart:
     dataset:
     {% for line in o.lines %}
       - - ${line.item.name} 
-        - - [0, ${abs(line.amount)}]
+        - - [0, $line.amount]
     {% end %}

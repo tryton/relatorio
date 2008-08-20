@@ -6,7 +6,8 @@ options:
   padding: {bottom: 70, left: 70, right: 10, top: 10}
   axis:
     y:
-      interval: 15
+      interval: 20
+      padding: 5
     x:
       ticks:
       {% for idx, line in enumerate(o.lines) %}
