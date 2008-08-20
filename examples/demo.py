@@ -25,7 +25,8 @@ repos.add_report(Invoice, 'application/vnd.oasis.opendocument.presentation',
 repos.add_report(Invoice, 'application/pdf', 'basic.tex',
                  report_name='ConTeXt')
 repos.add_report(Invoice, 'image/png', 'pie_chart', report_name='pie')
-repos.add_report(Invoice, 'image/png', 'bar_chart', report_name='bar')
+repos.add_report(Invoice, 'image/png', 'vbar_chart', report_name='vbar')
+repos.add_report(Invoice, 'image/png', 'hbar_chart', report_name='hbar')
 
 inv = Invoice(customer={'name': 'John Bonham',
                         'address': {'street': 'Smirnov street',
@@ -72,12 +73,14 @@ odp_report, _ = repos.reports[Invoice]['presentation']
 file('bonham_presentation.odp', 'w').write(odp_report(inv).render().getvalue())
 
 #PDF
-pdf_report, _ = repos.reports[Invoice]['ConTeXt']
-file('bonham_basic.pdf', 'w').write(pdf_report(inv).render().getvalue())
+#pdf_report, _ = repos.reports[Invoice]['ConTeXt']
+#file('bonham_basic.pdf', 'w').write(pdf_report(inv).render().getvalue())
 
 #Image
 pie_report, _ = repos.reports[Invoice]['pie']
 file('pie.png', 'w').write(pie_report(inv).render().getvalue())
-bar_report, _ = repos.reports[Invoice]['bar']
-file('bar.png', 'w').write(bar_report(inv).render().getvalue())
+hbar_report, _ = repos.reports[Invoice]['hbar']
+file('hbar.png', 'w').write(hbar_report(inv).render().getvalue())
+vbar_report, _ = repos.reports[Invoice]['vbar']
+file('vbar.png', 'w').write(vbar_report(inv).render().getvalue())
 
