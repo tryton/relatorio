@@ -1,0 +1,13 @@
+options:
+    background: {hide: true}
+    legend: {hide: true}
+    padding: {bottom: 10, left: 70, right: 10, top: 10}
+chart:
+    type: pie
+    width: 600
+    height: 400
+    dataset:
+    {% for line in o.lines %}
+      - - ${line.item.name} 
+        - - [0, $line.amount]
+    {% end %}

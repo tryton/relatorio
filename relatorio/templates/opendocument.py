@@ -34,6 +34,7 @@ import lxml.etree
 import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
+from relatorio.reporting import Report
 
 GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with)\s*(\s(\w+)=["'](.*)["']|$)|.*)''')
 EXTENSIONS = {'image/png': 'png',
@@ -54,11 +55,15 @@ class OOTemplateError(genshi.template.base.TemplateSyntaxError):
 
 class ImageHref:
     
-    def __init__(self, zipfile):
+    def __init__(self, zipfile, context):
         self.zip = zipfile
+        self.context = context.copy()
+        self.obj = self.context.pop('o')
 
     def __call__(self, expr, name):
         bitstream, mimetype = expr
+        if isinstance(bitstream, Report):
+            bitstream = bitstream(self.obj, **self.context).render()
         bitstream.seek(0)
         file_content = bitstream.read()
         name = md5.new(file_content).hexdigest()
@@ -274,7 +279,7 @@ class Template(MarkupTemplate):
 
     def generate(self, *args, **kwargs):
         serializer = OOSerializer(self.filepath)
-        kwargs['make_href'] = ImageHref(serializer.outzip)
+        kwargs['make_href'] = ImageHref(serializer.outzip, kwargs)
         generate_all = super(Template, self).generate(*args, **kwargs)
 
         return OOStream(generate_all, serializer)

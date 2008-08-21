@@ -86,7 +86,10 @@ class MIMETemplateLoader(TemplateLoader):
                                         'relatorio.templates.engines'):
             try:
                 engine = entrypoint.load()
-                cls.add_factory(entrypoint.name, engine)
+                if hasattr(engine, 'id_function'):
+                    cls.add_factory(entrypoint.name, engine, engine.id_function)
+                else:
+                    cls.add_factory(entrypoint.name, engine)
             except ImportError:
                 warnings.warn('We were not able to load %s. You will not '
                               'be able to use its functonlities' %
@@ -116,9 +119,8 @@ class Report:
 class DefaultFactory:
 
     def __call__(self, obj, **kwargs):
-        data = {}
+        data = kwargs.copy()
         data['o'] = obj
-        data['args'] = kwargs
         return data
 
 
