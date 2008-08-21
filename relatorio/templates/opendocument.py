@@ -58,12 +58,11 @@ class ImageHref:
     def __init__(self, zipfile, context):
         self.zip = zipfile
         self.context = context.copy()
-        self.obj = self.context.pop('o')
 
     def __call__(self, expr, name):
         bitstream, mimetype = expr
         if isinstance(bitstream, Report):
-            bitstream = bitstream(self.obj, **self.context).render()
+            bitstream = bitstream(**self.context).render()
         bitstream.seek(0)
         file_content = bitstream.read()
         name = md5.new(file_content).hexdigest()

@@ -35,7 +35,6 @@ class StubObject(object):
 def setup():
     MIMETemplateLoader.load_template_engines()
 
-
 class TestRepository(object):
 
     def test_register(self):
@@ -58,10 +57,17 @@ class TestRepository(object):
         eq_(name, 'default')
         eq_(report, report2)
 
+    def abspath_helper(self, path):
+        return _absolute(path)
+
     def test_absolute(self):
         "Test the absolute path calculation"
+        eq_("/home/nicoe/python/mock.py",
+            _absolute("/home/nicoe/python/mock.py"))
+
         our_dir, _ = os.path.split(__file__)
-        new_path = _absolute(os.path.join('brol', 'toto'))
+        # We use this because me go up by two frames
+        new_path = self.abspath_helper(os.path.join('brol', 'toto'))
         eq_(os.path.join(our_dir, 'brol', 'toto'), new_path)
 
 
@@ -76,14 +82,14 @@ class TestReport(object):
     def test_report(self):
         "Testing the report generation"
         a = StubObject(name='OpenHex')
-        eq_(self.report(a).render(), 'Hello OpenHex.\n')
+        eq_(self.report(o=a).render(), 'Hello OpenHex.\n')
 
     def test_factory(self):
         "Testing the data factory"
         class MyFactory:
-            def __call__(self, obj, time, y=1):
+            def __call__(self, o, time, y=1):
                 d = dict()
-                d['o'] = obj
+                d['o'] = o
                 d['y'] = y
                 d['time'] = time
                 d['func'] = lambda x: x+1
@@ -94,9 +100,9 @@ class TestReport(object):
                         'text/plain', MyFactory(), self.loader)
 
         a = StubObject(name='Foo')
-        eq_(report(a, time="One o'clock").render(), 
+        eq_(report(o=a, time="One o'clock").render(), 
             "Hi Foo,\nIt's One o'clock to 2 !\n")
-        eq_(report(a, time="One o'clock", y=4).render(), 
+        eq_(report(o=a, time="One o'clock", y=4).render(), 
             "Hi Foo,\nIt's One o'clock to 5 !\n")
         assert_raises(TypeError, report, a) 
 

@@ -107,9 +107,9 @@ class Report:
         self.tmpl_loader = loader
         self.filters = []
 
-    def __call__(self, obj, **kwargs):
+    def __call__(self, **kwargs):
         template = self.tmpl_loader.load(self.fpath, self.mimetype)
-        data = self.data_factory(obj, **kwargs)
+        data = self.data_factory(**kwargs)
         return template.generate(**data).filter(*self.filters)
 
     def __repr__(self):
@@ -118,9 +118,8 @@ class Report:
 
 class DefaultFactory:
 
-    def __call__(self, obj, **kwargs):
+    def __call__(self, **kwargs):
         data = kwargs.copy()
-        data['o'] = obj
         return data
 
 
