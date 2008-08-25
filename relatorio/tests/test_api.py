@@ -23,7 +23,7 @@ import os
 from nose.tools import *
 
 from reporting import (ReportRepository, Report, MIMETemplateLoader,
-                       DefaultFactory, _absolute)
+                       DefaultFactory, _absolute, _guess_type)
 
 
 class StubObject(object):
@@ -56,6 +56,12 @@ class TestRepository(object):
         name, report2 = reporting.reports[StubObject]['text/plain'][0]
         eq_(name, 'default')
         eq_(report, report2)
+
+    def test_mimeguesser(self):
+        eq_(_guess_type('application/pdf'), 'pdf')
+        eq_(_guess_type('text/plain'), 'text')
+        eq_(_guess_type('text/xhtml'), 'markup')
+        eq_(_guess_type('application/vnd.oasis.opendocument.text'), 'oo.org')
 
     def abspath_helper(self, path):
         return _absolute(path)
