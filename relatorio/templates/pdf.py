@@ -28,7 +28,9 @@ from cStringIO import StringIO
 
 import genshi
 import genshi.output
-from genshi.template import Template as GenshiTemplate, NewTextTemplate
+from genshi.template import NewTextTemplate
+
+from relatorio.templates import RelatorioStream
 
 TEXEXEC_PATH = '/usr/bin/texexec'
 _encode = genshi.output.encode
@@ -36,31 +38,9 @@ _encode = genshi.output.encode
 
 class Template(NewTextTemplate):
 
-    def __init__(self, source, filepath=None, filename=None, loader=None,
-                 encoding=None, lookup='strict', allow_exec=True):
-        if source is None:
-            source = open(filepath, 'r').read()
-        super(Template, self).__init__(source, filepath, filename, loader,
-                                       encoding, lookup, allow_exec)
     def generate(self, *args, **kwargs):
         generated = super(Template, self).generate(*args, **kwargs)
-        return PDFStream(generated, PDFSerializer())
-
-
-class PDFStream(genshi.core.Stream):
-
-    def __init__(self, content_stream, serializer):
-        self.events = content_stream
-        self.serializer = serializer
-
-    def render(self, method=None, encoding='utf-8', out=None, **kwargs):
-        return self.serializer(self.events)
-
-    def serialize(self, method, **kwargs):
-        return self.render(method, **kwargs)
-
-    def __or__(self, function):
-        return PDFStream(self.events | function, self.serializer)
+        return RelatorioStream(generated, PDFSerializer())
 
 
 class PDFSerializer:
@@ -76,8 +56,8 @@ class PDFSerializer:
         tex_file.write(_encode(self.text_serializer(stream)))
         tex_file.close()
 
-        p = subprocess.check_call([TEXEXEC_PATH, '--purge', 'report.tex'],
-                                  cwd=self.working_dir)
+        subprocess.check_call([TEXEXEC_PATH, '--purge', 'report.tex'],
+                              cwd=self.working_dir)
 
         pdf = StringIO()
         pdf.write(open(self.pdf_file, 'r').read())

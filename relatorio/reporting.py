@@ -22,7 +22,6 @@ __metaclass__ = type
 
 import os, sys
 import warnings
-from cStringIO import StringIO
 
 import pkg_resources
 from genshi.template import TemplateLoader
@@ -32,18 +31,22 @@ def _absolute(path):
     if os.path.isabs(path):
         return path
     caller_fname = sys._getframe(2).f_globals['__file__']
-    dir = os.path.dirname(caller_fname)
-    return os.path.abspath(os.path.join(dir, path))
+    caller_dir = os.path.dirname(caller_fname)
+    return os.path.abspath(os.path.join(caller_dir, path))
 
 def _guess_type(mime):
+    """
+    Returns the codename used by relatorio to identify which template plugin
+    it should use to render a mimetype
+    """
     mime = mime.lower()
-    type, stype = mime.split('/', 1)
-    if type == 'application':
+    major, stype = mime.split('/', 1)
+    if major == 'application':
         if 'opendocument' in stype:
             return 'oo.org'
         else:
             return stype
-    elif type == 'text':
+    elif major == 'text':
         if stype in ('xml', 'html', 'xhtml'):
             return 'markup'
         else:
@@ -60,12 +63,14 @@ class MIMETemplateLoader(TemplateLoader):
     mime_func = [_guess_type]
 
     def get_type(self, mime):
+        "finds the codename used by relatorio to work on a mimetype"
         for func in reversed(self.mime_func):
-            t = func(mime)
-            if t is not None:
-                return t
+            codename = func(mime)
+            if codename is not None:
+                return codename
 
     def load(self, path, mime):
+        "returns a template object based on path"
         rtype = self.get_type(mime)
         return super(MIMETemplateLoader, self).load(path,
                                                     cls=self.factories[rtype])
@@ -117,6 +122,9 @@ class Report:
 
 
 class DefaultFactory:
+    """This is the default factory used by relatorio.
+    
+    It just returns a copy of the data it receives"""
 
     def __call__(self, **kwargs):
         data = kwargs.copy()
@@ -137,6 +145,15 @@ class ReportRepository:
 
     def add_report(self, klass, mimetype, template_path, data_factory=None,
                    report_name='default'):
+        """adds a report to the repository.
+
+        You will be able to find the report via 
+            - the class it is working on
+            - the mimetype it outputs
+            - the name of the report
+        
+        You also have the opportunity to define a specific data_factory.
+        """
         if data_factory is None:
             data_factory = self.default_factory
         reports = self.reports.setdefault(klass, {})

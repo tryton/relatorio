@@ -25,7 +25,9 @@ from cStringIO import StringIO
 import yaml
 import genshi
 import genshi.output
-from genshi.template import Template as GenshiTemplate, NewTextTemplate
+from genshi.template import NewTextTemplate
+
+from relatorio.templates import RelatorioStream
 
 import cairo
 import pycha
@@ -41,37 +43,17 @@ PYCHA_TYPE = {'pie': pycha.pie.PieChart,
 _encode = genshi.output.encode
 
 class Template(NewTextTemplate):
+    "A chart templating object"
 
-    def __init__(self, source, filepath=None, filename=None, loader=None,
-                 encoding=None, lookup='strict', allow_exec=True):
-        if source is None:
-            source = open(filepath, 'r').read()
-        super(Template, self).__init__(source, filepath, filename, loader,
-                                       encoding, lookup, allow_exec)
     def generate(self, *args, **kwargs):
         generated = super(Template, self).generate(*args, **kwargs)
-        return PNGStream(generated, PNGSerializer())
+        return RelatorioStream(generated, PNGSerializer())
 
     @staticmethod
     def id_function(mimetype):
+        "The function used to return the codename."
         if mimetype == 'image/png':
             return 'chart'
-
-
-class PNGStream(genshi.core.Stream):
-
-    def __init__(self, content_stream, serializer):
-        self.events = content_stream
-        self.serializer = serializer
-
-    def render(self, method=None, encoding='utf-8', out=None, **kwargs):
-        return self.serializer(self.events)
-
-    def serialize(self, method, **kwargs):
-        return self.render(method, **kwargs)
-
-    def __or__(self, function):
-        return PNGStream(self.events | function, self.serializer)
 
 
 class PNGSerializer:

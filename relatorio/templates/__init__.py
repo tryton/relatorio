@@ -20,20 +20,20 @@
 
 __metaclass__ = type
 
-from genshi.template import Template as GenshiTemplate, MarkupTemplate
+import genshi.core
 
 
-class NullTemplate(GenshiTemplate):
+class RelatorioStream(genshi.core.Stream):
+    "Base class for the relatorio streams."
 
-    def __init__(self, source, filepath=None, filename=None, loader=None,
-                 encoding=None, lookup='strict', allow_exec=True):
-        raise NotImplementedError
+    def render(self, method=None, encoding='utf-8', out=None, **kwargs):
+        "calls the serializer to render the template"
+        return self.serializer(self.events)
 
-    def _parse(self, source, encoding):
-        pass
-    
-    def _prepare(self, stream):
-        pass
+    def serialize(self, method='xml', **kwargs):
+        "generates the bitstream corresponding to the template"
+        return self.render(method, **kwargs)
 
-    def generate(self, *args, **kwargs):
-        pass
+    def __or__(self, function):
+        "Support for the bitwise operator"
+        return RelatorioStream(self.events | function, self.serializer)

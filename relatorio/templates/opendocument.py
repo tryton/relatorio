@@ -20,7 +20,6 @@
 
 __metaclass__ = type
 
-import os
 import re
 import md5
 import urllib
@@ -34,6 +33,8 @@ import lxml.etree
 import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
+
+from relatorio.templates import RelatorioStream
 from relatorio.reporting import Report
 
 GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with)\s*(\s(\w+)=["'](.*)["']|$)|.*)''')
@@ -45,18 +46,19 @@ EXTENSIONS = {'image/png': 'png',
               'image/xbm': 'xbm',
              }
 
-_encode = genshi.output.encode
-ETElement = lxml.etree.Element
+output_encode = genshi.output.encode
+EtreeElement = lxml.etree.Element
 
 
 class OOTemplateError(genshi.template.base.TemplateSyntaxError):
-    pass
+    "Error to raise when there is a SyntaxError in the genshi template"
 
 
 class ImageHref:
+    "A class used to add image in the odf zipfile"
     
-    def __init__(self, zipfile, context):
-        self.zip = zipfile
+    def __init__(self, zfile, context):
+        self.zip = zfile
         self.context = context.copy()
 
     def __call__(self, expr, name):
@@ -82,14 +84,18 @@ class Template(MarkupTemplate):
                                        encoding, lookup, allow_exec)
 
     def _parse(self, source, encoding):
+        """parses the odf file.
+        
+        It adds genshi directives and finds the inner docs.
+        """
         inzip = zipfile.ZipFile(self.filepath)
         content = inzip.read('content.xml')
         styles = inzip.read('styles.xml')
 
-        genshi_obj = super(Template, self)
-        content = genshi_obj._parse(self.add_directives(content), encoding)
-        styles = genshi_obj._parse(self.add_directives(styles), encoding)
-        content_files= [('content.xml', content)]
+        template = super(Template, self)
+        content = template._parse(self.add_directives(content), encoding)
+        styles = template._parse(self.add_directives(styles), encoding)
+        content_files = [('content.xml', content)]
         styles_files = [('styles.xml', styles)]
 
         while self.inner_docs:
@@ -98,9 +104,10 @@ class Template(MarkupTemplate):
             content = inzip.read(c_path)
             styles = inzip.read(s_path)
             
-            c_parsed = genshi_obj._parse(self.add_directives(content), encoding)
-            s_parsed = genshi_obj._parse(self.add_directives(styles), encoding)
-
+            c_parsed = template._parse(self.add_directives(inzip.read(c_path)),
+                                       encoding)
+            s_parsed = template._parse(self.add_directives(inzip.read(s_path)),
+                                       encoding)
             content_files.append((c_path, c_parsed))
             styles_files.append((s_path, s_parsed))
 
@@ -113,6 +120,8 @@ class Template(MarkupTemplate):
         return parsed
 
     def add_directives(self, content):
+        """adds to genshi directives, handle the images and the innerdocs.
+        """
         tree = lxml.etree.parse(StringIO(content))
         root = tree.getroot()
         self.namespaces = root.nsmap.copy()
@@ -125,6 +134,7 @@ class Template(MarkupTemplate):
         return StringIO(lxml.etree.tostring(tree))
 
     def _invert_style(self, tree):
+        "inverts the text:a and text:span"
         xpath_expr = "//text:a[starts-with(@xlink:href, 'relatorio://')]"\
                      "/text:span"
         for span in tree.xpath(xpath_expr, namespaces=self.namespaces):
@@ -137,6 +147,7 @@ class Template(MarkupTemplate):
             span.append(text_a)
 
     def _relatorio_statements(self, tree):
+        "finds the relatorio statements (text:a/text:placeholder)"
         # If this node href matches the relatorio URL it is kept.
         # If this node href matches a genshi directive it is kept for further
         # processing.
@@ -163,9 +174,8 @@ class Template(MarkupTemplate):
                               % (self.filepath, expr,
                                  statement.text.encode('utf-8')))
 
-            match_obj = GENSHI_EXPR.match(expr)
-
-            expr, closing, directive, _, attr, attr_val = match_obj.groups()
+            expr, closing, directive, _, attr, attr_val = \
+                    GENSHI_EXPR.match(expr).groups()
             if directive is not None:
                 genshi_dir.append((statement, closing))
             r_statements.append((statement, 
@@ -216,20 +226,20 @@ class Template(MarkupTemplate):
                     continue
                 for pair in genshi_pairs:
                     if pair[0] == r_node:
+                        opening, closing = pair
                         break
-                opening, closing = pair
 
                 o_ancestors = list(opening.iterancestors())
                 c_ancestors = list(closing.iterancestors())
-                for n in o_ancestors:
-                    if n in c_ancestors:
-                        ancestor = n
+                for node in o_ancestors:
+                    if node in c_ancestors:
+                        ancestor = node
                         break
 
-                genshi_node = ETElement('{%s}%s' % (self.namespaces['py'],
-                                                    directive), 
-                                        attrib={attr: a_val},
-                                        nsmap=self.namespaces)
+                genshi_node = EtreeElement('{%s}%s' % (self.namespaces['py'],
+                                                       directive), 
+                                           attrib={attr: a_val},
+                                           nsmap=self.namespaces)
                 can_append = False
                 for node in ancestor.iterchildren():
                     if node in o_ancestors:
@@ -257,6 +267,7 @@ class Template(MarkupTemplate):
                     parent.attrib.pop(office_name, None)
 
     def _handle_images(self, tree):
+        "replaces all draw:frame named 'image: ...' by a draw:image node" 
         draw_name = '{%s}name' % self.namespaces['draw']
         draw_image = '{%s}image' % self.namespaces['draw']
         python_attrs = '{%s}attrs' % self.namespaces['py']
@@ -264,12 +275,13 @@ class Template(MarkupTemplate):
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             d_name = draw.attrib[draw_name]
             attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
-            image_node = ETElement(draw_image, 
-                                   attrib={python_attrs: attr_expr},
-                                   nsmap=self.namespaces)
+            image_node = EtreeElement(draw_image, 
+                                      attrib={python_attrs: attr_expr},
+                                      nsmap=self.namespaces)
             draw.replace(draw[0], image_node)
 
     def _handle_innerdocs(self, tree):
+        "finds inner_docs and adds them to the processing stack."
         href_attrib = '{%s}href' % self.namespaces['xlink']
         xpath_expr = "//draw:object[starts-with(@xlink:href, './')" \
                      "and @xlink:show='embed']"
@@ -277,27 +289,12 @@ class Template(MarkupTemplate):
             self.inner_docs.append(draw.attrib[href_attrib][2:])
 
     def generate(self, *args, **kwargs):
+        "creates the RelatorioStream."
         serializer = OOSerializer(self.filepath)
         kwargs['make_href'] = ImageHref(serializer.outzip, kwargs)
         generate_all = super(Template, self).generate(*args, **kwargs)
 
-        return OOStream(generate_all, serializer)
-
-
-class OOStream(genshi.core.Stream):
-
-    def __init__(self, content_stream, serializer):
-        self.events = content_stream
-        self.serializer = serializer
-
-    def render(self, method=None, encoding='utf-8', out=None, **kwargs):
-        return self.serializer(self.events)
-
-    def serialize(self, method, **kwargs):
-        return self.render(method, **kwargs)
-
-    def __or__(self, function):
-        return OOStream(self.events | function, self.serializer)
+        return RelatorioStream(generate_all, serializer)
 
 
 class OOSerializer:
@@ -316,15 +313,15 @@ class OOSerializer:
                 continue
             files.setdefault(stream_for, []).append((kind, data, pos))
 
-        for f in self.inzip.infolist():
-            if f.filename.startswith('ObjectReplacements'):
+        for f_info in self.inzip.infolist():
+            if f_info.filename.startswith('ObjectReplacements'):
                 continue
-            elif f.filename in files:
-                stream = files[f.filename]
-                self.outzip.writestr(f.filename, 
-                                     _encode(self.xml_serializer(stream)))
+            elif f_info.filename in files:
+                stream = files[f_info.filename]
+                self.outzip.writestr(f_info.filename, 
+                                     output_encode(self.xml_serializer(stream)))
             else:
-                self.outzip.writestr(f, self.inzip.read(f.filename))
+                self.outzip.writestr(f_info, self.inzip.read(f_info.filename))
         self.inzip.close()
         self.outzip.close()
 
