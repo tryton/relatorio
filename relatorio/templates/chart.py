@@ -29,7 +29,6 @@ from genshi.template import NewTextTemplate
 
 from relatorio.templates import RelatorioStream
 
-import cairo
 import pycha
 import pycha.pie
 import pycha.line
@@ -47,30 +46,25 @@ class Template(NewTextTemplate):
 
     def generate(self, *args, **kwargs):
         generated = super(Template, self).generate(*args, **kwargs)
-        return RelatorioStream(generated, PNGSerializer())
+        return RelatorioStream(generated, CairoSerializer())
 
     @staticmethod
     def id_function(mimetype):
         "The function used to return the codename."
-        if mimetype == 'image/png':
+        if mimetype in ('image/png', 'image/svg'):
             return 'chart'
 
 
-class PNGSerializer:
+class CairoSerializer:
 
     def __init__(self):
         self.text_serializer = genshi.output.TextSerializer()
 
     def __call__(self, stream):
-        img = StringIO()
         yml = StringIO(_encode(self.text_serializer(stream)))
         chart_yaml = yaml.load(yml.read())
         chart_info = chart_yaml['chart']
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, chart_info['width'],
-                                     chart_info['height'])
-        chart = PYCHA_TYPE[chart_info['type']](surface, chart_yaml['options'])
+        chart = PYCHA_TYPE[chart_info['type']](chart_yaml['options'])
         chart.addDataset(chart_info['dataset'])
-        chart.render()
-        surface.write_to_png(img)
-        return img
+        return chart.render()
 

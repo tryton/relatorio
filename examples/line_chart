@@ -1,4 +1,7 @@
 options:
+  width: 600
+  height: 500
+  output_type: png
   legend: 
     hide: false
     position: 
@@ -16,8 +19,6 @@ options:
       {% end %}
 chart:
   type: line
-  width: 600
-  height: 500
   dataset:
     - - Sales
       -
