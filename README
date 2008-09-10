@@ -1,0 +1,21 @@
+relatorio
+=========
+
+A templating library which provides a way to easily output all kind of
+different files (odt, ods, png, svg, ...). Adding support for more filetype is
+easy: you just have to create a plugin for this.
+
+relatorio also provides a report repository allowing you to link python objects
+and report together, find reports by mimetypes/name/pyhon objects.
+
+Note on PyCha
+=============
+
+The current PyCha release is lacking at least a serious feature (support for
+negative values) thus I created of "friendly fork" of PyCha in order to provide
+this feature and some other.
+
+The mercurial repository for this code can be found at
+
+    http://hg.openhex.org/pycha
+

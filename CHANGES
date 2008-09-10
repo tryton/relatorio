@@ -1,3 +1,9 @@
+0.4.0 - 20080910
+ * Generation of png/svg files through PyCha
+ * Code cleaning
+ * Signature of report __call__ method mimics the one of genshi templates
+ * Added the possibility to call chart report from odf ones
+
 0.3.0 - 20080806
  * Generation of pdf files through ConTeXt
  * Better support of cell value in opendocument table cells
