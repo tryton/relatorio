@@ -8,10 +8,10 @@ repos.add_report(Invoice, 'image/png', 'line_chart', report_name='line')
 
 if __name__ == '__main__':
     pie_report, _ = repos.reports[Invoice]['pie']
-    file('pie.png', 'w').write(pie_report(o=inv).render().getvalue())
+    file('pie.png', 'wb').write(pie_report(o=inv).render().getvalue())
     hbar_report, _ = repos.reports[Invoice]['hbar']
-    file('hbar.svg', 'w').write(hbar_report(o=inv).render().getvalue())
+    file('hbar.svg', 'wb').write(hbar_report(o=inv).render().getvalue())
     vbar_report, _ = repos.reports[Invoice]['vbar']
-    file('vbar.svg', 'w').write(vbar_report(o=inv).render().getvalue())
+    file('vbar.svg', 'wb').write(vbar_report(o=inv).render().getvalue())
     line_report, _ = repos.reports[Invoice]['line']
-    file('line.png', 'w').write(line_report(o=inv).render().getvalue())
+    file('line.png', 'wb').write(line_report(o=inv).render().getvalue())
