@@ -53,7 +53,7 @@ class TestRepository(object):
         assert_true(report.fpath.endswith(os.path.join('templates', 
                                                        'test.tmpl')))
 
-        name, report2 = reporting.reports[StubObject]['text/plain'][0]
+        report2, name = reporting.reports[StubObject]['text/plain'][0]
         eq_(name, 'default')
         eq_(report, report2)
 
