@@ -131,6 +131,13 @@ class DefaultFactory:
         return data
 
 
+class ReportDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        self.mimetypes = set()
+        super(ReportDict, self).__init__(*args, **kwargs)
+
+
 class ReportRepository:
     """ReportRepository stores the report definition associated to objects.
 
@@ -156,9 +163,13 @@ class ReportRepository:
         """
         if data_factory is None:
             data_factory = self.default_factory
-        reports = self.reports.setdefault(klass, {})
+        reports = self.reports.setdefault(klass, ReportDict())
         report = Report(_absolute(template_path), mimetype, data_factory(),
                         self.loader)
         reports[report_name] = report, mimetype
-        reports.setdefault(mimetype, []).append((report_name, report))
+        reports.setdefault(mimetype, []).append((report, report_name))
+        if hasattr(reports, 'mimetypes'):
+            reports.mimetypes.add(mimetype)
+        else:
+            reports.mimetypes = set([mimetype])
 
