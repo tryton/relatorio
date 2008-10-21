@@ -325,4 +325,4 @@ class OOSerializer:
         self.inzip.close()
         self.outzip.close()
 
-        return self.new_oo
+        return self.new_oo.getvalue()
