@@ -29,6 +29,7 @@ from genshi.template import NewTextTemplate
 
 from relatorio.templates import RelatorioStream
 
+import cairo
 import pycha
 import pycha.pie
 import pycha.line
@@ -40,6 +41,7 @@ PYCHA_TYPE = {'pie': pycha.pie.PieChart,
               'line': pycha.line.LineChart,
              }
 _encode = genshi.output.encode
+
 
 class Template(NewTextTemplate):
     "A chart templating object"
@@ -61,10 +63,29 @@ class CairoSerializer:
         self.text_serializer = genshi.output.TextSerializer()
 
     def __call__(self, stream):
+        result = StringIO()
         yml = StringIO(_encode(self.text_serializer(stream)))
         chart_yaml = yaml.load(yml.read())
         chart_info = chart_yaml['chart']
-        chart = PYCHA_TYPE[chart_info['type']](chart_yaml['options'])
+        chart_type = chart_info['output_type']
+        if chart_type == 'png':
+            surface = cairo.ImageSurface(cairo.FORMAT_ARGB32,
+                                         chart_yaml['options']['width'],
+                                         chart_yaml['options']['height'])
+        elif chart_type == 'svg':
+            surface = cairo.SVGSurface(result, chart_yaml['options']['width'],
+                                       chart_yaml['options']['height'])
+        else:
+            raise NotImplementedError
+        
+        chart = PYCHA_TYPE[chart_info['type']](surface, chart_yaml['options'])
         chart.addDataset(chart_info['dataset'])
-        return chart.render()
+        chart.render()
+        
+        if chart_type == 'png':
+            surface.write_to_png(result)
+        elif chart_type == 'svg':
+            surface.finish()
+
+        return result
 

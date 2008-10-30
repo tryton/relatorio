@@ -1,7 +1,6 @@
 options:
   width: 600
   height: 500
-  output_type: svg
   legend: 
     hide: false
     position: 
@@ -19,6 +18,7 @@ options:
       {% end %}
 chart:
   type: hbar
+  output_type: svg
   dataset:
     - - Sales
       -
