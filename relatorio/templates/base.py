@@ -18,13 +18,22 @@
 #
 ###############################################################################
 
-import warnings
+__metaclass__ = type
 
-plugins = ['opendocument', 'pdf', 'chart']
+import genshi.core
 
-for name in plugins:
-    try:
-        __import__('relatorio.templates.%s' % name)
-    except:
-        warnings.warn("Unable to load plugin '%s', you will not be able "
-                      "to use it" % name)
+
+class RelatorioStream(genshi.core.Stream):
+    "Base class for the relatorio streams."
+
+    def render(self, method=None, encoding='utf-8', out=None, **kwargs):
+        "calls the serializer to render the template"
+        return self.serializer(self.events)
+
+    def serialize(self, method='xml', **kwargs):
+        "generates the bitstream corresponding to the template"
+        return self.render(method, **kwargs)
+
+    def __or__(self, function):
+        "Support for the bitwise operator"
+        return RelatorioStream(self.events | function, self.serializer)

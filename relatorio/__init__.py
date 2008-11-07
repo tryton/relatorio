@@ -10,6 +10,6 @@ relatorio also provides a report repository allowing you to link python objects
 and report together, find reports by mimetypes/name/python objects.
 """
 from relatorio.reporting import MIMETemplateLoader, ReportRepository, Report
-MIMETemplateLoader.load_template_engines()
+import templates
 
 __version__ = '0.4.0'

@@ -27,7 +27,8 @@ import genshi
 import genshi.output
 from genshi.template import NewTextTemplate
 
-from relatorio.templates import RelatorioStream
+from relatorio.templates.base import RelatorioStream
+from relatorio.reporting import MIMETemplateLoader
 
 import cairo
 import pycha
@@ -89,3 +90,4 @@ class CairoSerializer:
 
         return result
 
+MIMETemplateLoader.add_factory('chart', Template, Template.id_function)

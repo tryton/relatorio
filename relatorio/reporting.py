@@ -84,22 +84,6 @@ class MIMETemplateLoader(TemplateLoader):
         if id_function is not None:
             cls.mime_func.append(id_function)
 
-    @classmethod
-    def load_template_engines(cls):
-        """loads template engines found via PEAK's pkg_resources"""
-        for entrypoint in pkg_resources.iter_entry_points(
-                                        'relatorio.templates.engines'):
-            try:
-                engine = entrypoint.load()
-                if hasattr(engine, 'id_function'):
-                    cls.add_factory(entrypoint.name, engine, engine.id_function)
-                else:
-                    cls.add_factory(entrypoint.name, engine)
-            except ImportError:
-                warnings.warn('We were not able to load %s. You will not '
-                              'be able to use its functonlities' %
-                              entrypoint.module_name)
-
 
 class Report:
     """Report is a simple interface on top of a rendering template.

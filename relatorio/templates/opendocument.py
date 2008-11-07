@@ -34,8 +34,8 @@ import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
 
-from relatorio.templates import RelatorioStream
-from relatorio.reporting import Report
+from relatorio.templates.base import RelatorioStream
+from relatorio.reporting import Report, MIMETemplateLoader
 
 GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with)\s*(\s(\w+)=["'](.*)["']|$)|.*)''')
 EXTENSIONS = {'image/png': 'png',
@@ -120,7 +120,7 @@ class Template(MarkupTemplate):
         return parsed
 
     def insert_directives(self, content):
-        """adds to genshi directives, handle the images and the innerdocs.
+        """adds the genshi directives, handle the images and the innerdocs.
         """
         tree = lxml.etree.parse(StringIO(content))
         root = tree.getroot()
@@ -326,3 +326,5 @@ class OOSerializer:
         self.outzip.close()
 
         return self.new_oo.getvalue()
+
+MIMETemplateLoader.add_factory('oo.org', Template)

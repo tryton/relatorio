@@ -30,7 +30,8 @@ import genshi
 import genshi.output
 from genshi.template import NewTextTemplate
 
-from relatorio.templates import RelatorioStream
+from relatorio.templates.base import RelatorioStream
+from relatorio.reporting import MIMETemplateLoader
 
 TEXEXEC_PATH = '/usr/bin/texexec'
 _encode = genshi.output.encode
@@ -65,3 +66,4 @@ class PDFSerializer:
         shutil.rmtree(self.working_dir, ignore_errors=True)
         return pdf
 
+MIMETemplateLoader.add_factory('pdf', Template)
