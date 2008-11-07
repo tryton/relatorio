@@ -88,30 +88,30 @@ class Template(MarkupTemplate):
         
         It adds genshi directives and finds the inner docs.
         """
-        inzip = zipfile.ZipFile(self.filepath)
-        content = inzip.read('content.xml')
-        styles = inzip.read('styles.xml')
+        zf = zipfile.ZipFile(self.filepath)
+        content = zf.read('content.xml')
+        styles = zf.read('styles.xml')
 
         template = super(Template, self)
-        content = template._parse(self.add_directives(content), encoding)
-        styles = template._parse(self.add_directives(styles), encoding)
+        content = template._parse(self.insert_directives(content), encoding)
+        styles = template._parse(self.insert_directives(styles), encoding)
         content_files = [('content.xml', content)]
         styles_files = [('styles.xml', styles)]
 
         while self.inner_docs:
             doc = self.inner_docs.pop()
             c_path, s_path = doc + '/content.xml', doc + '/styles.xml'
-            content = inzip.read(c_path)
-            styles = inzip.read(s_path)
+            content = zf.read(c_path)
+            styles = zf.read(s_path)
             
-            c_parsed = template._parse(self.add_directives(inzip.read(c_path)),
+            c_parsed = template._parse(self.insert_directives(zf.read(c_path)),
                                        encoding)
-            s_parsed = template._parse(self.add_directives(inzip.read(s_path)),
+            s_parsed = template._parse(self.insert_directives(zf.read(s_path)),
                                        encoding)
             content_files.append((c_path, c_parsed))
             styles_files.append((s_path, s_parsed))
 
-        inzip.close()
+        zf.close()
         parsed = []
         for fpath, fparsed in content_files + styles_files:
             parsed.append((genshi.core.PI, ('relatorio', fpath), None))
@@ -119,7 +119,7 @@ class Template(MarkupTemplate):
 
         return parsed
 
-    def add_directives(self, content):
+    def insert_directives(self, content):
         """adds to genshi directives, handle the images and the innerdocs.
         """
         tree = lxml.etree.parse(StringIO(content))
