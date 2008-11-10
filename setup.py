@@ -26,4 +26,4 @@ setup(
         "Topic :: Text Processing",
     ],
     test_suite="nose.collector",
-    })
+    )
