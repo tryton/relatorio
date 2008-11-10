@@ -325,6 +325,6 @@ class OOSerializer:
         self.inzip.close()
         self.outzip.close()
 
-        return self.new_oo.getvalue()
+        return self.new_oo
 
 MIMETemplateLoader.add_factory('oo.org', Template)
