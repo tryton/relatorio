@@ -1,3 +1,7 @@
+0.4.1 - 20081110
+ * Support for upstream PyCha since the most annoying bug has been fixed
+ * Removed the entrypoint stuff that was confusing lot of users
+
 0.4.0 - 20080910
  * Generation of png/svg files through PyCha
  * Code cleaning
