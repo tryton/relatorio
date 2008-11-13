@@ -22,8 +22,8 @@
 import os
 from nose.tools import *
 
-from reporting import (ReportRepository, Report, MIMETemplateLoader,
-                       DefaultFactory, _absolute, _guess_type)
+from relatorio.reporting import (ReportRepository, Report, MIMETemplateLoader,
+                                 DefaultFactory, _absolute, _guess_type)
 
 
 class StubObject(object):
@@ -32,8 +32,6 @@ class StubObject(object):
         for key, val in kwargs.iteritems():
             setattr(self, key, val)
 
-def setup():
-    MIMETemplateLoader.load_template_engines()
 
 class TestRepository(object):
 
@@ -43,17 +41,17 @@ class TestRepository(object):
         reporting.add_report(StubObject, 'text/plain', 
                              os.path.join('templates', 'test.tmpl'))
 
-        assert_true(StubObject in reporting.reports)
-        assert_true('default' in reporting.reports[StubObject])
-        assert_true('text/plain' in reporting.reports[StubObject])
+        assert_true(StubObject in reporting.classes)
+        assert_true('default' in reporting.classes[StubObject].ids)
+        assert_true('text/plain' in reporting.classes[StubObject].mimetypes)
 
-        report, mime = reporting.reports[StubObject]['default']
+        report, mime = reporting.classes[StubObject].ids['default']
         eq_(mime, 'text/plain')
         eq_(report.mimetype, 'text/plain')
         assert_true(report.fpath.endswith(os.path.join('templates', 
                                                        'test.tmpl')))
 
-        report2, name = reporting.reports[StubObject]['text/plain'][0]
+        report2, name = reporting.classes[StubObject].mimetypes['text/plain'][0]
         eq_(name, 'default')
         eq_(report, report2)
 

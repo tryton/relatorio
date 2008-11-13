@@ -80,7 +80,7 @@ class TestOOTemplating(object):
         xmlns:xlink="urn:xlink">
         <text:a xlink:href="relatorio://foo">foo</text:a>
         </b:a>''' % 'urn:text'
-        parsed = self.oot.add_directives(xml) 
+        parsed = self.oot.insert_directives(xml) 
         root = lxml.etree.parse(StringIO(xml)).getroot()
         root_parsed = lxml.etree.parse(parsed).getroot()
         eq_(root_parsed[0].attrib['{http://genshi.edgewall.org/}replace'], 

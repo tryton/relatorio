@@ -20,7 +20,7 @@
 
 import warnings
 
-plugins = ['opendocument', 'pdf', 'chart']
+plugins = ['base', 'opendocument', 'pdf', 'chart']
 
 for name in plugins:
     try:
