@@ -21,7 +21,6 @@
 __metaclass__ = type
 
 import os, sys
-import warnings
 
 import pkg_resources
 from genshi.template import TemplateLoader
@@ -78,8 +77,6 @@ class MIMETemplateLoader(TemplateLoader):
     @classmethod
     def add_factory(cls, abbr_mimetype, template_factory, id_function=None):
         """adds a template factory to the already known factories"""
-        if abbr_mimetype in cls.factories:
-            warnings.warn('You are overriding an already defined link.')
         cls.factories[abbr_mimetype] = template_factory
         if id_function is not None:
             cls.mime_func.append(id_function)
@@ -115,11 +112,11 @@ class DefaultFactory:
         return data
 
 
-class ReportDict(dict):
+class ReportDict:
 
     def __init__(self, *args, **kwargs):
-        self.mimetypes = set()
-        super(ReportDict, self).__init__(*args, **kwargs)
+        self.mimetypes = {}
+        self.ids = {}
 
 
 class ReportRepository:
@@ -130,7 +127,7 @@ class ReportRepository:
     """
 
     def __init__(self, datafactory=DefaultFactory):
-        self.reports = {}
+        self.classes = {}
         self.default_factory = datafactory
         self.loader = MIMETemplateLoader(auto_reload=True)
 
@@ -147,13 +144,18 @@ class ReportRepository:
         """
         if data_factory is None:
             data_factory = self.default_factory
-        reports = self.reports.setdefault(klass, ReportDict())
+        reports = self.classes.setdefault(klass, ReportDict())
         report = Report(_absolute(template_path), mimetype, data_factory(),
                         self.loader)
-        reports[report_name] = report, mimetype
-        reports.setdefault(mimetype, []).append((report, report_name))
-        if hasattr(reports, 'mimetypes'):
-            reports.mimetypes.add(mimetype)
-        else:
-            reports.mimetypes = set([mimetype])
+        reports.ids[report_name] = report, mimetype
+        reports.mimetypes.setdefault(mimetype, []).append((report, report_name))
 
+    def by_mime(self, klass, mimetype):
+        """gets a list of report related to a class by specifying the mimetype
+        """
+        return self.classes[klass].mimetypes[mimetype]
+
+    def by_id(self, klass, id):
+        """get a report related to a class by its id
+        """
+        return self.classes[klass].ids[id]
