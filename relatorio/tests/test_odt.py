@@ -156,3 +156,7 @@ class TestOOTemplating(object):
         group = regexp.match('formatLang("en")').groups()
         eq_(group, ('formatLang("en")', None, None, None, None, None))
 
+    def test_str(self):
+        "Testing that a RelatorioStream str returns a bitstream"
+        stream = str(self.oot.generate(**self.data))
+        ok_(isinstance(stream, str))

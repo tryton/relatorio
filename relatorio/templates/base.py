@@ -20,6 +20,8 @@
 
 __metaclass__ = type
 
+from cStringIO import OutputType
+
 import genshi.core
 from genshi.template import NewTextTemplate, MarkupTemplate
 
@@ -40,6 +42,13 @@ class RelatorioStream(genshi.core.Stream):
     def __or__(self, function):
         "Support for the bitwise operator"
         return RelatorioStream(self.events | function, self.serializer)
+
+    def __str__(self):
+        val = self.render()
+        if isinstance(val, OutputType):
+            return val.getvalue()
+        else:
+            return val
 
 MIMETemplateLoader.add_factory('text', NewTextTemplate)
 MIMETemplateLoader.add_factory('xml', MarkupTemplate)
