@@ -49,6 +49,11 @@ EXTENSIONS = {'image/png': 'png',
 output_encode = genshi.output.encode
 EtreeElement = lxml.etree.Element
 
+def guess_type(val):
+    if isinstance(val, (str, unicode)):
+        return 'string'
+    elif isinstance(val, (int, float)):
+        return 'float'
 
 class OOTemplateError(genshi.template.base.TemplateSyntaxError):
     "Error to raise when there is a SyntaxError in the genshi template"
@@ -259,12 +264,15 @@ class Template(MarkupTemplate):
                 parent = r_node.getparent().getparent()
                 if parent is None or parent.tag != table_cell_tag:
                     continue
-                if parent.attrib.get(office_valuetype, 'string') != 'string':
-                    # The grand-parent tag is a table cell we set the
-                    # office:value attribute of this cell
-                    dico = "{'%s': %s}" % (office_name, expr)
-                    parent.attrib[attrib_name] = dico
-                    parent.attrib.pop(office_name, None)
+
+                # The grand-parent tag is a table cell we should set the
+                # correct value and type for this cell.
+                dico = "{'%s': %s, '%s': guess_type(%s)}"
+                parent.attrib[attrib_name] = dico % (office_name, expr,
+                                                     office_valuetype,
+                                                     expr)
+                parent.attrib.pop(office_valuetype, None)
+                parent.attrib.pop(office_name, None)
 
     def _handle_images(self, tree):
         "replaces all draw:frame named 'image: ...' by a draw:image node" 
@@ -292,6 +300,7 @@ class Template(MarkupTemplate):
         "creates the RelatorioStream."
         serializer = OOSerializer(self.filepath)
         kwargs['make_href'] = ImageHref(serializer.outzip, kwargs)
+        kwargs['guess_type'] = guess_type
         generate_all = super(Template, self).generate(*args, **kwargs)
 
         return RelatorioStream(generate_all, serializer)
