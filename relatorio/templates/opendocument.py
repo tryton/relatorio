@@ -36,6 +36,10 @@ from genshi.template import MarkupTemplate
 
 from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import Report, MIMETemplateLoader
+try:
+    from relatorio.templates.chart import Template as ChartTemplate
+except ImportError:
+    ChartTemplate = type(None)
 
 GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with)\s*(\s(\w+)=["'](.*)["']|$)|.*)''')
 EXTENSIONS = {'image/png': 'png',
@@ -70,6 +74,8 @@ class ImageHref:
         bitstream, mimetype = expr
         if isinstance(bitstream, Report):
             bitstream = bitstream(**self.context).render()
+        elif isinstance(bitstream, ChartTemplate):
+            bitstream = bitstream.generate(**self.context).render()
         bitstream.seek(0)
         file_content = bitstream.read()
         name = md5.new(file_content).hexdigest()
@@ -269,8 +275,7 @@ class Template(MarkupTemplate):
                 # correct value and type for this cell.
                 dico = "{'%s': %s, '%s': guess_type(%s)}"
                 parent.attrib[attrib_name] = dico % (office_name, expr,
-                                                     office_valuetype,
-                                                     expr)
+                                                     office_valuetype, expr)
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
 
