@@ -39,7 +39,7 @@ inv = Invoice(customer={'name': 'John Bonham',
                     ],
               id='MZY-20080703',
               status='late',
-              trombine=(file('bouteille.png', 'r'), 'image/png'))
+              bottle=(file('bouteille.png', 'r'), 'image/png'))
 
 
 
