@@ -10,6 +10,8 @@ repos.add_report(Invoice, 'application/vnd.oasis.opendocument.spreadsheet',
                  'pivot.ods', report_name='pivot')
 repos.add_report(Invoice, 'application/vnd.oasis.opendocument.presentation',
                  'presentation.odp', report_name='presentation')
+repos.add_report(None, 'application/vnd.oasis.opendocument.text',
+                 'columns.odt', report_name='column')
 
 if __name__ == '__main__':
     # Add a chart to the invoice
@@ -28,3 +30,9 @@ if __name__ == '__main__':
     # ODP
     odp_report, _ = repos.classes[Invoice].ids['presentation']
     file('bonham_presentation.odp', 'wb').write(odp_report(o=inv).render().getvalue())
+
+    # Columns example
+    column_report, _ = repos.classes[None].ids['column']
+    lst = [[], ['i'], ['a', 'b'], [1, 2, 3], ['I', 'II', 'III', 'IV']]
+    file('test_columns.odt',
+         'wb').write(column_report(lst=lst).render().getvalue())
