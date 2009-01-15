@@ -264,20 +264,12 @@ class Template(MarkupTemplate):
 
                 # - we add all the nodes between the opening and closing
                 #   statements to this new node
-                can_append = False
-                for node in ancestor.iterchildren():
-                    if node in o_ancestors:
-                        outermost_o_ancestor = node
-                        assert outermost_o_ancestor == o_ancestors[-1]
-                        can_append = True
-                        continue
-                    if node in c_ancestors:
-                        outermost_c_ancestor = node
-                        assert outermost_c_ancestor == c_ancestors[-1]
+                outermost_o_ancestor = o_ancestors[-1]
+                outermost_c_ancestor = c_ancestors[-1]
+                for node in outermost_o_ancestor.itersiblings():
+                    if node is outermost_c_ancestor:
                         break
-                    if can_append:
-                        # we are between the opening and closing node
-                        genshi_node.append(node)
+                    genshi_node.append(node)
 
                 # - we replace the opening statement by the <py:xxx> node
                 ancestor.replace(outermost_o_ancestor, genshi_node)
