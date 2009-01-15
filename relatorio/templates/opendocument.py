@@ -10,7 +10,7 @@
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU General Public License along with
@@ -41,7 +41,15 @@ try:
 except ImportError:
     ChartTemplate = type(None)
 
-GENSHI_EXPR = re.compile(r'''((/)?(for|choose|otherwise|when|if|with)\s*(\s(\w+)=["'](.*)["']|$)|.*)''')
+GENSHI_EXPR = re.compile(r'''
+        (/)?                                 # is this a closing tag?
+        (for|choose|otherwise|when|if|with)  # tag directive
+        \s*
+        (?:\s(\w+)=["'](.*)["']|$)           # match a single attr & its value
+        |
+        .*                                   # or anything else
+        ''', re.VERBOSE)
+
 EXTENSIONS = {'image/png': 'png',
               'image/jpeg': 'jpg',
               'image/bmp': 'bmp',
@@ -64,13 +72,14 @@ class OOTemplateError(genshi.template.base.TemplateSyntaxError):
 
 
 class ImageHref:
-    "A class used to add image in the odf zipfile"
-    
+    "A class used to add images in the odf zipfile"
+
     def __init__(self, zfile, context):
         self.zip = zfile
         self.context = context.copy()
 
     def __call__(self, expr, name):
+        #FIXME: name argument is unused
         bitstream, mimetype = expr
         if isinstance(bitstream, Report):
             bitstream = bitstream(**self.context).render()
@@ -96,7 +105,7 @@ class Template(MarkupTemplate):
 
     def _parse(self, source, encoding):
         """parses the odf file.
-        
+
         It adds genshi directives and finds the inner docs.
         """
         zf = zipfile.ZipFile(self.filepath)
@@ -114,7 +123,7 @@ class Template(MarkupTemplate):
             c_path, s_path = doc + '/content.xml', doc + '/styles.xml'
             content = zf.read(c_path)
             styles = zf.read(s_path)
-            
+
             c_parsed = template._parse(self.insert_directives(zf.read(c_path)),
                                        encoding)
             s_parsed = template._parse(self.insert_directives(zf.read(s_path)),
@@ -146,7 +155,7 @@ class Template(MarkupTemplate):
 
     def _invert_style(self, tree):
         "inverts the text:a and text:span"
-        xpath_expr = "//text:a[starts-with(@xlink:href, 'relatorio://')]"\
+        xpath_expr = "//text:a[starts-with(@xlink:href, 'relatorio://')]" \
                      "/text:span"
         for span in tree.xpath(xpath_expr, namespaces=self.namespaces):
             text_a = span.getparent()
@@ -162,13 +171,16 @@ class Template(MarkupTemplate):
         # If this node href matches the relatorio URL it is kept.
         # If this node href matches a genshi directive it is kept for further
         # processing.
-        r_statements, genshi_dir = [], []
         xlink_href_attrib = '{%s}href' % self.namespaces['xlink']
         text_a = '{%s}a' % self.namespaces['text']
         placeholder = '{%s}placeholder' % self.namespaces['text']
-
         s_xpath = "//text:a[starts-with(@xlink:href, 'relatorio://')]" \
                   "| //text:placeholder"
+
+        r_statements = []
+        opened_tags = []
+        # We map each opening tag with its closing tag
+        closing_tags = {}
         for statement in tree.xpath(s_xpath, namespaces=self.namespaces):
             if statement.tag == placeholder:
                 expr = statement.text[1:-1]
@@ -181,18 +193,27 @@ class Template(MarkupTemplate):
             elif not statement.text:
                 warnings.warn('No statement text in %s' % self.filepath)
             elif expr != statement.text and statement.tag == text_a:
-                warnings.warn('url and text do not match in %s: %s != %s' 
+                warnings.warn('url and text do not match in %s: %s != %s'
                               % (self.filepath, expr,
                                  statement.text.encode('utf-8')))
 
-            expr, closing, directive, _, attr, attr_val = \
+            closing, directive, attr, attr_val = \
                     GENSHI_EXPR.match(expr).groups()
+            is_opening = closing != '/'
             if directive is not None:
-                genshi_dir.append((statement, closing))
-            r_statements.append((statement, 
-                                 (expr, closing, directive, attr, attr_val)))
+                # map closing tags with their opening tag
+                if is_opening:
+                    opened_tags.append(statement)
+                else:
+                    closing_tags[id(opened_tags.pop())] = statement
+            # - we operate only on opening statements
+            if is_opening:
+                r_statements.append((statement,
+                                     (expr, directive, attr, attr_val))
+                                   )
+        assert not opened_tags
 
-        return r_statements, genshi_dir
+        return r_statements, closing_tags
 
     def _handle_relatorio_tags(self, tree):
         """
@@ -206,63 +227,62 @@ class Template(MarkupTemplate):
         office_valuetype = '{%s}value-type' % self.namespaces['office']
         genshi_replace = '{%s}replace' % self.namespaces['py']
 
-        r_statements, genshi_directives = self._relatorio_statements(tree)
-        # We match the opening and closing directives together
-        idx = 0
-        genshi_pairs, inserted = [], []
-        for statement, closing in genshi_directives:
-            if closing is None:
-                genshi_pairs.append([statement, None])
-                inserted.append(idx)
-                idx += 1
-            else:
-                genshi_pairs[inserted.pop()][1] = statement
+        r_statements, closing_tags = self._relatorio_statements(tree)
 
         for r_node, parsed in r_statements:
-            expr, c_dir, directive, attr, a_val = parsed
+            expr, directive, attr, a_val = parsed
 
+            # If the node is a genshi directive statement:
             if directive is not None:
-                # If the node is a genshi directive statement:
-                #    - we operate only on opening statement
-                #    - we find the nearest ancestor of the closing and opening
-                #      statement
-                #    - we create a <py:xxx> node
-                #    - we add all the node between the opening and closing
-                #      statements to this new node
-                #    - we replace the opening statement by the <py:for> node
-                #    - we delete the closing statement
 
-                if c_dir is not None:
-                    # pass the closing statements
-                    continue
-                for pair in genshi_pairs:
-                    if pair[0] == r_node:
-                        opening, closing = pair
-                        break
+                opening = r_node
+                closing = closing_tags[id(r_node)]
 
-                o_ancestors = list(opening.iterancestors())
+                # - we find the nearest common ancestor of the closing and
+                #   opening statements
+                o_ancestors = []
                 c_ancestors = list(closing.iterancestors())
-                for node in o_ancestors:
-                    if node in c_ancestors:
+                ancestor = None
+                for node in opening.iterancestors():
+                    try:
+                        idx = c_ancestors.index(node)
+                        assert c_ancestors[idx] == node
+                        del c_ancestors[idx:]
                         ancestor = node
                         break
+                    except ValueError:
+                        pass
+                    o_ancestors.append(node)
+                assert ancestor is not None, \
+                       "No common ancestor found for opening and closing tag"
 
+                # - we create a <py:xxx> node
                 genshi_node = EtreeElement('{%s}%s' % (self.namespaces['py'],
-                                                       directive), 
+                                                       directive),
                                            attrib={attr: a_val},
                                            nsmap=self.namespaces)
+
+                # - we add all the nodes between the opening and closing
+                #   statements to this new node
                 can_append = False
                 for node in ancestor.iterchildren():
                     if node in o_ancestors:
                         outermost_o_ancestor = node
+                        assert outermost_o_ancestor == o_ancestors[-1]
                         can_append = True
                         continue
                     if node in c_ancestors:
                         outermost_c_ancestor = node
+                        assert outermost_c_ancestor == c_ancestors[-1]
                         break
                     if can_append:
+                        # we are between the opening and closing node
                         genshi_node.append(node)
+
+                # - we replace the opening statement by the <py:xxx> node
                 ancestor.replace(outermost_o_ancestor, genshi_node)
+
+                # - we delete the closing statement (and its ancestors)
                 ancestor.remove(outermost_c_ancestor)
             else:
                 # It's not a genshi statement it's a python expression
@@ -280,7 +300,7 @@ class Template(MarkupTemplate):
                 parent.attrib.pop(office_name, None)
 
     def _handle_images(self, tree):
-        "replaces all draw:frame named 'image: ...' by a draw:image node" 
+        "replaces all draw:frame named 'image: ...' by a draw:image node"
         draw_name = '{%s}name' % self.namespaces['draw']
         draw_image = '{%s}image' % self.namespaces['draw']
         python_attrs = '{%s}attrs' % self.namespaces['py']
@@ -288,7 +308,7 @@ class Template(MarkupTemplate):
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             d_name = draw.attrib[draw_name]
             attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
-            image_node = EtreeElement(draw_image, 
+            image_node = EtreeElement(draw_image,
                                       attrib={python_attrs: attr_expr},
                                       nsmap=self.namespaces)
             draw.replace(draw[0], image_node)
@@ -332,7 +352,7 @@ class OOSerializer:
                 continue
             elif f_info.filename in files:
                 stream = files[f_info.filename]
-                self.outzip.writestr(f_info.filename, 
+                self.outzip.writestr(f_info.filename,
                                      output_encode(self.xml_serializer(stream)))
             else:
                 self.outzip.writestr(f_info, self.inzip.read(f_info.filename))

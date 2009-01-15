@@ -11,7 +11,7 @@
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU General Public License along with
@@ -36,7 +36,7 @@ from templates.opendocument import Template, GENSHI_EXPR
 def pseudo_gettext(string):
     catalog = {'Mes collègues sont:': 'My collegues are:',
                'Bonjour,': 'Hello,',
-               'Je suis un test de templating en odt.': 
+               'Je suis un test de templating en odt.':
                 'I am an odt templating test',
                'Felix da housecat': unicode('Félix le chat de la maison',
                                             'utf8'),
@@ -54,7 +54,7 @@ class TestOOTemplating(object):
         self.data = {'first_name': u'Trente',
                      'last_name': unicode('Møller', 'utf8'),
                      'ville': unicode('Liège', 'utf8'),
-                     'friends': [{'first_name': u'Camille', 
+                     'friends': [{'first_name': u'Camille',
                                   'last_name': u'Salauhpe'},
                                  {'first_name': u'Mathias',
                                   'last_name': u'Lechat'}],
@@ -80,10 +80,10 @@ class TestOOTemplating(object):
         xmlns:xlink="urn:xlink">
         <text:a xlink:href="relatorio://foo">foo</text:a>
         </b:a>''' % 'urn:text'
-        parsed = self.oot.insert_directives(xml) 
+        parsed = self.oot.insert_directives(xml)
         root = lxml.etree.parse(StringIO(xml)).getroot()
         root_parsed = lxml.etree.parse(parsed).getroot()
-        eq_(root_parsed[0].attrib['{http://genshi.edgewall.org/}replace'], 
+        eq_(root_parsed[0].attrib['{http://genshi.edgewall.org/}replace'],
             'foo')
 
     def test_styles(self):
@@ -143,18 +143,23 @@ class TestOOTemplating(object):
 
     def test_regexp(self):
         "Testing the regexp used to find relatorio tags"
-        regexp = re.compile(GENSHI_EXPR)
-        group = regexp.match('for each="foo in bar"').groups()
-        eq_(group, ('for each="foo in bar"', None, 'for', ' each="foo in bar"',
-                    'each', 'foo in bar'))
-        group = regexp.match('foreach="foo in bar"').groups()
-        eq_(group, ('foreach="foo in bar"', None, None, None, None, None))
-        group = regexp.match('/for').groups()
-        eq_(group, ('/for', '/', 'for', '', None, None))
-        group = regexp.match('/for ').groups()
-        eq_(group, ('/for ', '/', 'for', '', None, None))
-        group = regexp.match('formatLang("en")').groups()
-        eq_(group, ('formatLang("en")', None, None, None, None, None))
+        # a valid expression
+        group = GENSHI_EXPR.match('for each="foo in bar"').groups()
+        eq_(group, (None, 'for', 'each', 'foo in bar'))
+
+        # invalid expr
+        group = GENSHI_EXPR.match('foreach="foo in bar"').groups()
+        eq_(group, (None, None, None, None))
+
+        # valid closing tags
+        group = GENSHI_EXPR.match('/for').groups()
+        eq_(group, ('/', 'for', None, None))
+        group = GENSHI_EXPR.match('/for ').groups()
+        eq_(group, ('/', 'for', None, None))
+
+        # another non matching expr
+        group = GENSHI_EXPR.match('formatLang("en")').groups()
+        eq_(group, (None, None, None, None))
 
     def test_str(self):
         "Testing that a RelatorioStream str returns a bitstream"

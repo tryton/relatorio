@@ -10,7 +10,7 @@
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU General Public License along with
@@ -38,7 +38,7 @@ class TestRepository(object):
     def test_register(self):
         "Testing the registration"
         reporting = ReportRepository()
-        reporting.add_report(StubObject, 'text/plain', 
+        reporting.add_report(StubObject, 'text/plain',
                              os.path.join('templates', 'test.tmpl'))
 
         assert_true(StubObject in reporting.classes)
@@ -48,7 +48,7 @@ class TestRepository(object):
         report, mime = reporting.classes[StubObject].ids['default']
         eq_(mime, 'text/plain')
         eq_(report.mimetype, 'text/plain')
-        assert_true(report.fpath.endswith(os.path.join('templates', 
+        assert_true(report.fpath.endswith(os.path.join('templates',
                                                        'test.tmpl')))
 
         report2, name = reporting.classes[StubObject].mimetypes['text/plain'][0]
@@ -104,9 +104,9 @@ class TestReport(object):
                         'text/plain', MyFactory(), self.loader)
 
         a = StubObject(name='Foo')
-        eq_(report(o=a, time="One o'clock").render(), 
+        eq_(report(o=a, time="One o'clock").render(),
             "Hi Foo,\nIt's One o'clock to 2 !\n")
-        eq_(report(o=a, time="One o'clock", y=4).render(), 
+        eq_(report(o=a, time="One o'clock", y=4).render(),
             "Hi Foo,\nIt's One o'clock to 5 !\n")
-        assert_raises(TypeError, report, a) 
+        assert_raises(TypeError, report, a)
 
