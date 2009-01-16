@@ -25,6 +25,8 @@ import md5
 import urllib
 import zipfile
 from cStringIO import StringIO
+from copy import deepcopy
+
 
 import warnings
 warnings.filterwarnings('always', module='relatorio.templates.opendocument')
@@ -93,6 +95,17 @@ class ImageHref:
             self.zip.writestr(path, file_content)
         return {'{http://www.w3.org/1999/xlink}href': path}
 
+class TableColumnDef:
+    """A class used to add the correct number of column definitions to a
+    table containing an horizontal repetition"
+    """
+    def __init__(self, zfile, context):
+        self.zip = zfile
+        self.context = context.copy()
+
+    def __call__(self, expr, name):
+        #FIXME: name argument is unused
+        return
 
 class Template(MarkupTemplate):
 
@@ -206,13 +219,12 @@ class Template(MarkupTemplate):
                     opened_tags.append(statement)
                 else:
                     closing_tags[id(opened_tags.pop())] = statement
-            # - we operate only on opening statements
+            # - we only need to return opening statements
             if is_opening:
                 r_statements.append((statement,
                                      (expr, directive, attr, attr_val))
                                    )
         assert not opened_tags
-
         return r_statements, closing_tags
 
     def _handle_relatorio_tags(self, tree):
@@ -220,12 +232,15 @@ class Template(MarkupTemplate):
         Will treat all relatorio tag (py:if/for/choose/when/otherwise)
         tags
         """
-        # Some tag name constants
+        # Some tag/attribute name constants
         table_cell_tag = '{%s}table-cell' % self.namespaces['table']
+        table_row_tag = '{%s}table-row' % self.namespaces['table']
+        num_col_attr = '{%s}number-columns-repeated' % self.namespaces['table']
         attrib_name = '{%s}attrs' % self.namespaces['py']
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
-        genshi_replace = '{%s}replace' % self.namespaces['py']
+        py_namespace = self.namespaces['py']
+        genshi_replace = '{%s}replace' % py_namespace
 
         r_statements, closing_tags = self._relatorio_statements(tree)
 
@@ -234,7 +249,6 @@ class Template(MarkupTemplate):
 
             # If the node is a genshi directive statement:
             if directive is not None:
-
                 opening = r_node
                 closing = closing_tags[id(r_node)]
 
@@ -247,6 +261,7 @@ class Template(MarkupTemplate):
                     try:
                         idx = c_ancestors.index(node)
                         assert c_ancestors[idx] == node
+                        # we only need ancestors up to the common one
                         del c_ancestors[idx:]
                         ancestor = node
                         break
@@ -256,8 +271,66 @@ class Template(MarkupTemplate):
                 assert ancestor is not None, \
                        "No common ancestor found for opening and closing tag"
 
+                # handle horizontal repetition (over columns)
+                if False:
+                #if directive == "for" and ancestor.tag == table_row_tag:
+                    print "horizontal repetition", a_val
+                    # find position of current cell in row
+                    position_xpath_expr = \
+                    'count(ancestor::table:table-cell/preceding-sibling::*)'
+                    opening_pos = opening.xpath(position_xpath_expr,
+                                                namespaces=self.namespaces)
+                    closing_pos = closing.xpath(position_xpath_expr,
+                                                namespaces=self.namespaces)
+                    print "opening_pos", opening_pos
+                    print "closing_pos", closing_pos
+
+                    idx = 0
+                    table_node = opening.xpath('ancestor::table:table[1]',
+                                               namespaces=self.namespaces)[0]
+                    #XXX: use getiterator('table:table-column') instead of xpath?
+                    to_split = []
+                    to_move = []
+                    for tag in table_node.xpath('table:table-column',
+                                                namespaces=self.namespaces):
+                        if num_col_attr in tag.attrib:
+                            oldidx = idx
+                            idx += int(tag.attrib[num_col_attr])
+                            print "oldidx", oldidx, "idx", idx
+                            if oldidx < opening_pos < idx or \
+                               oldidx < closing_pos < idx:
+                                to_split.append(tag)
+                                print "to_split", to_split
+                        else:
+                            idx += 1
+
+                    # split tags
+                    for tag in to_split:
+                        tag_pos = table_node.index(tag)
+                        print "tag_pos", tag_pos
+                        num = int(tag.attrib[num_col_attr])
+                        tag.attrib.pop(num_col_attr)
+                        new_tags = [deepcopy(tag) for _ in range(num)]
+                        table_node[tag_pos:tag_pos] = new_tags
+
+                    # compute moves
+                    if False:
+                        if idx < opening_pos:
+                            pass
+                        elif opening_pos < idx < closing_pos:
+                            to_move.append(tag)
+                        else:
+                            break
+                        print idx
+                    # move tags
+                    #
+                    # add a <py:for each="%s"> % a_val
+#                    for_node = EtreeElement('{%s}%s' % (py_namespace, 'for'),
+#                                            attrib={attr: a_val},
+#                                            nsmap=self.namespaces)
+
                 # - we create a <py:xxx> node
-                genshi_node = EtreeElement('{%s}%s' % (self.namespaces['py'],
+                genshi_node = EtreeElement('{%s}%s' % (py_namespace,
                                                        directive),
                                            attrib={attr: a_val},
                                            nsmap=self.namespaces)
