@@ -81,12 +81,25 @@ class MIMETemplateLoader(TemplateLoader):
         if id_function is not None:
             cls.mime_func.append(id_function)
 
+default_loader = MIMETemplateLoader(auto_reload=True)
+
+class DefaultFactory:
+    """This is the default factory used by relatorio.
+
+    It just returns a copy of the data it receives"""
+
+    def __call__(self, **kwargs):
+        data = kwargs.copy()
+        return data
+
+default_factory = DefaultFactory()
 
 class Report:
     """Report is a simple interface on top of a rendering template.
     """
 
-    def __init__(self, path, mimetype, factory, loader):
+    def __init__(self, path, mimetype,
+                 factory=default_factory, loader=default_loader):
         self.fpath = path
         self.mimetype = mimetype
         self.data_factory = factory
@@ -101,15 +114,6 @@ class Report:
     def __repr__(self):
         return '<relatorio report on %s>' % self.fpath
 
-
-class DefaultFactory:
-    """This is the default factory used by relatorio.
-    
-    It just returns a copy of the data it receives"""
-
-    def __call__(self, **kwargs):
-        data = kwargs.copy()
-        return data
 
 
 class ReportDict:
@@ -129,17 +133,17 @@ class ReportRepository:
     def __init__(self, datafactory=DefaultFactory):
         self.classes = {}
         self.default_factory = datafactory
-        self.loader = MIMETemplateLoader(auto_reload=True)
+        self.loader = default_loader
 
     def add_report(self, klass, mimetype, template_path, data_factory=None,
                    report_name='default'):
         """adds a report to the repository.
 
-        You will be able to find the report via 
+        You will be able to find the report via
             - the class it is working on
             - the mimetype it outputs
             - the name of the report
-        
+
         You also have the opportunity to define a specific data_factory.
         """
         if data_factory is None:
@@ -148,7 +152,8 @@ class ReportRepository:
         report = Report(_absolute(template_path), mimetype, data_factory(),
                         self.loader)
         reports.ids[report_name] = report, mimetype
-        reports.mimetypes.setdefault(mimetype, []).append((report, report_name))
+        reports.mimetypes.setdefault(mimetype, []) \
+                         .append((report, report_name))
 
     def by_mime(self, klass, mimetype):
         """gets a list of report related to a class by specifying the mimetype
