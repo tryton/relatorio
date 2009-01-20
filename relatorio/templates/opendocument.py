@@ -35,6 +35,10 @@ import lxml.etree
 import genshi
 import genshi.output
 from genshi.template import MarkupTemplate
+from genshi.filters import Transformer
+from genshi.filters.transform import ENTER, EXIT
+from genshi.core import Stream
+
 
 from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import Report, MIMETemplateLoader
@@ -45,7 +49,7 @@ except ImportError:
 
 GENSHI_EXPR = re.compile(r'''
         (/)?                                 # is this a closing tag?
-        (for|choose|otherwise|when|if|with)  # tag directive
+        (for|if|choose|when|otherwise|with)  # tag directive
         \s*
         (?:\s(\w+)=["'](.*)["']|$)           # match a single attr & its value
         |
@@ -60,6 +64,7 @@ EXTENSIONS = {'image/png': 'png',
               'image/xbm': 'xbm',
              }
 
+RELATORIO_URI = 'http://relatorio.openhex.org/'
 output_encode = genshi.output.encode
 EtreeElement = lxml.etree.Element
 
@@ -95,17 +100,25 @@ class ImageHref:
             self.zip.writestr(path, file_content)
         return {'{http://www.w3.org/1999/xlink}href': path}
 
-class TableColumnDef:
+
+class ColumnCounter:
     """A class used to add the correct number of column definitions to a
     table containing an horizontal repetition"
     """
-    def __init__(self, zfile, context):
-        self.zip = zfile
-        self.context = context.copy()
+    def __init__(self):
+        self.temp_counters = {}
+        self.counters = {}
 
-    def __call__(self, expr, name):
-        #FIXME: name argument is unused
-        return
+    def reset(self, loop_id):
+        self.temp_counters[loop_id] = 0
+
+    def inc(self, loop_id):
+        self.temp_counters[loop_id] += 1
+
+    def store(self, loop_id, table_name):
+        self.counters[table_name] = max(self.temp_counters.pop(loop_id),
+                                        self.counters.get(table_name, 0))
+
 
 class Template(MarkupTemplate):
 
@@ -113,6 +126,7 @@ class Template(MarkupTemplate):
                  encoding=None, lookup='strict', allow_exec=True):
         self.namespaces = {}
         self.inner_docs = []
+        self.has_col_loop = False
         super(Template, self).__init__(source, filepath, filename, loader,
                                        encoding, lookup, allow_exec)
 
@@ -159,6 +173,7 @@ class Template(MarkupTemplate):
         root = tree.getroot()
         self.namespaces = root.nsmap.copy()
         self.namespaces['py'] = 'http://genshi.edgewall.org/'
+        self.namespaces['relatorio'] = RELATORIO_URI
 
         self._invert_style(tree)
         self._handle_relatorio_tags(tree)
@@ -203,16 +218,24 @@ class Template(MarkupTemplate):
             if not expr:
                 raise OOTemplateError("No expression in the tag",
                                       self.filepath)
-            elif not statement.text:
-                warnings.warn('No statement text in %s' % self.filepath)
-            elif expr != statement.text and statement.tag == text_a:
-                warnings.warn('url and text do not match in %s: %s != %s'
-                              % (self.filepath, expr,
-                                 statement.text.encode('utf-8')))
-
             closing, directive, attr, attr_val = \
                     GENSHI_EXPR.match(expr).groups()
             is_opening = closing != '/'
+
+            warn_msg = None
+            if not statement.text:
+                warn_msg = "No statement text in '%s' for '%s'" \
+                           % (self.filepath, expr)
+            elif expr != statement.text and statement.tag == text_a:
+                warn_msg = "url and text do not match in %s: %s != %s" \
+                           % (self.filepath, expr,
+                              statement.text.encode('utf-8'))
+            if warn_msg:
+                if directive is not None and not is_opening:
+                    warn_msg += " corresponding to opening tag '%s'" \
+                                % opened_tags[-1].text
+                warnings.warn(warn_msg)
+
             if directive is not None:
                 # map closing tags with their opening tag
                 if is_opening:
@@ -233,14 +256,22 @@ class Template(MarkupTemplate):
         tags
         """
         # Some tag/attribute name constants
-        table_cell_tag = '{%s}table-cell' % self.namespaces['table']
-        table_row_tag = '{%s}table-row' % self.namespaces['table']
-        num_col_attr = '{%s}number-columns-repeated' % self.namespaces['table']
-        attrib_name = '{%s}attrs' % self.namespaces['py']
+        table_namespace = self.namespaces['table']
+        table_tag = '{%s}table' % table_namespace
+        table_col_tag = '{%s}table-column' % table_namespace
+        table_row_tag = '{%s}table-row' % table_namespace
+        table_cell_tag = '{%s}table-cell' % table_namespace
+        table_num_col_attr = '{%s}number-columns-repeated' % table_namespace
+        table_name_attr = '{%s}name' % table_namespace
+
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
+
         py_namespace = self.namespaces['py']
+        py_attrs_attr = '{%s}attrs' % py_namespace
         genshi_replace = '{%s}replace' % py_namespace
+
+        repeat_tag = '{%s}repeat' % self.namespaces['relatorio']
 
         r_statements, closing_tags = self._relatorio_statements(tree)
 
@@ -270,64 +301,129 @@ class Template(MarkupTemplate):
                     o_ancestors.append(node)
                 assert ancestor is not None, \
                        "No common ancestor found for opening and closing tag"
+                outermost_o_ancestor = o_ancestors[-1]
+                outermost_c_ancestor = c_ancestors[-1]
 
                 # handle horizontal repetition (over columns)
-                if False:
-                #if directive == "for" and ancestor.tag == table_row_tag:
-                    print "horizontal repetition", a_val
-                    # find position of current cell in row
-                    position_xpath_expr = \
-                    'count(ancestor::table:table-cell/preceding-sibling::*)'
-                    opening_pos = opening.xpath(position_xpath_expr,
-                                                namespaces=self.namespaces)
-                    closing_pos = closing.xpath(position_xpath_expr,
-                                                namespaces=self.namespaces)
-                    print "opening_pos", opening_pos
-                    print "closing_pos", closing_pos
+                if directive == "for" and ancestor.tag == table_row_tag:
+                    self.has_col_loop = True
 
-                    idx = 0
-                    table_node = opening.xpath('ancestor::table:table[1]',
-                                               namespaces=self.namespaces)[0]
-                    #XXX: use getiterator('table:table-column') instead of xpath?
-                    to_split = []
-                    to_move = []
-                    for tag in table_node.xpath('table:table-column',
-                                                namespaces=self.namespaces):
-                        if num_col_attr in tag.attrib:
-                            oldidx = idx
-                            idx += int(tag.attrib[num_col_attr])
-                            print "oldidx", oldidx, "idx", idx
-                            if oldidx < opening_pos < idx or \
-                               oldidx < closing_pos < idx:
-                                to_split.append(tag)
-                                print "to_split", to_split
-                        else:
-                            idx += 1
+                    # table (it is not necessarily the parent of ancestor)
+                    table_node = ancestor.iterancestors(table_tag).next()
+                    table_name = table_node.attrib[table_name_attr]
 
-                    # split tags
-                    for tag in to_split:
-                        tag_pos = table_node.index(tag)
-                        print "tag_pos", tag_pos
-                        num = int(tag.attrib[num_col_attr])
-                        tag.attrib.pop(num_col_attr)
-                        new_tags = [deepcopy(tag) for _ in range(num)]
-                        table_node[tag_pos:tag_pos] = new_tags
+                    # add counting instructions
+                    loop_id = id(opening)
 
-                    # compute moves
-                    if False:
-                        if idx < opening_pos:
-                            pass
-                        elif opening_pos < idx < closing_pos:
-                            to_move.append(tag)
-                        else:
-                            break
-                        print idx
-                    # move tags
-                    #
-                    # add a <py:for each="%s"> % a_val
-#                    for_node = EtreeElement('{%s}%s' % (py_namespace, 'for'),
-#                                            attrib={attr: a_val},
-#                                            nsmap=self.namespaces)
+                    # 1) add reset counter code on the row opening tag
+                    #    (through a py:attrs attribute).
+                    # Note that table_name is not needed in the first two
+                    # operations, but a unique id within the table is required
+                    # to support nested column repetition
+                    attr_value = "__reset_col_count(%d)" % loop_id
+                    ancestor.attrib[py_attrs_attr] = attr_value
+
+                    # 2) add increment code (through a py:attrs attribute) on
+                    #    the first cell node after the opening (cell node)
+                    #    ancestor
+                    enclosed_cell = outermost_o_ancestor.itersiblings().next()
+                    assert enclosed_cell.tag == table_cell_tag
+                    attr_value = "__inc_col_count(%d)" % loop_id
+                    enclosed_cell.attrib[py_attrs_attr] = attr_value
+
+                    # 3) add "store count" code as a py:replace node, as the
+                    #    last child of the row
+                    attr_value = "__store_col_count(%d, %r)" % (loop_id,
+                                                                table_name)
+                    replace_node = EtreeElement('{%s}replace' % py_namespace,
+                                                attrib={'value': attr_value},
+                                                nsmap=self.namespaces)
+                    ancestor.append(replace_node)
+
+                    # find the position in the row of the cells holding the
+                    # <for> and </for> instructions
+                    position_xpath_expr = 'count(preceding-sibling::*)'
+                    opening_pos = \
+                        int(outermost_o_ancestor.xpath(position_xpath_expr,
+                                                   namespaces=self.namespaces))
+                    closing_pos = \
+                        int(outermost_c_ancestor.xpath(position_xpath_expr,
+                                                   namespaces=self.namespaces))
+
+                    # check if this table was already processed
+                    repeat_node = table_node.find(repeat_tag)
+                    if repeat_node is not None:
+                        prev_pos = (int(repeat_node.attrib['opening']),
+                                    int(repeat_node.attrib['closing']))
+                        if (opening_pos, closing_pos) != prev_pos:
+                            raise Exception(
+                                'Incoherent column repetition found! '
+                                'If a table has several lines with repeated '
+                                'columns, the repetition need to be on the '
+                                'same columns across all lines.')
+                    else:
+                        # compute splits: we need to split any column header
+                        # which is repeated so many times that it encompass
+                        # any of the column headers that we need to repeat
+                        to_split = []
+                        idx = 0
+                        childs = list(table_node.iterchildren(table_col_tag))
+                        assert closing_pos < len(childs)
+                        for tag in childs:
+                            if table_num_col_attr in tag.attrib:
+                                oldidx = idx
+                                idx += int(tag.attrib[table_num_col_attr])
+                                if oldidx < opening_pos < idx or \
+                                   oldidx < closing_pos < idx:
+                                    to_split.append(tag)
+                            else:
+                                idx += 1
+
+                        # split tags
+                        for tag in to_split:
+                            tag_pos = table_node.index(tag)
+                            num = int(tag.attrib.pop(table_num_col_attr))
+                            new_tags = [deepcopy(tag) for _ in range(num)]
+                            table_node[tag_pos:tag_pos+1] = new_tags
+
+                        # compute moves and deletes: the column headers
+                        # corresponding to the opening and closing tags
+                        # need to be deleted. The column headers between them
+                        # need to be moved to inside the "repeat" tag (which
+                        # is to be created later).
+                        to_remove = []
+                        to_move = []
+                        coldefs = table_node.iterchildren(table_col_tag)
+                        for idx, tag in enumerate(coldefs):
+                            if idx in (opening_pos, closing_pos):
+                                to_remove.append(tag)
+                            if opening_pos < idx < closing_pos:
+                                to_move.append(tag)
+                            elif idx > closing_pos:
+                                break
+                        assert len(to_remove) == 2, "failed %d %d" \
+                               % (opening_pos, closing_pos)
+                        assert to_move
+
+                        # execute deletes
+                        for node in to_remove:
+                            table_node.remove(node)
+
+                        # execute moves (add a <relatorio:repeat> node around
+                        # the column definitions nodes)
+                        o_pos, c_pos = str(opening_pos), str(closing_pos)
+                        repeat_node = EtreeElement(repeat_tag,
+                                                   attrib={
+                                                       "opening": o_pos,
+                                                       "closing": c_pos,
+                                                       "table": table_name},
+                                                   nsmap=self.namespaces)
+
+                        for node in to_move[1:]:
+                            table_node.remove(node)
+                            repeat_node.append(node)
+                        table_node.replace(to_move[0], repeat_node)
+                        repeat_node.append(to_move[0])
 
                 # - we create a <py:xxx> node
                 genshi_node = EtreeElement('{%s}%s' % (py_namespace,
@@ -337,8 +433,6 @@ class Template(MarkupTemplate):
 
                 # - we add all the nodes between the opening and closing
                 #   statements to this new node
-                outermost_o_ancestor = o_ancestors[-1]
-                outermost_c_ancestor = c_ancestors[-1]
                 for node in outermost_o_ancestor.itersiblings():
                     if node is outermost_c_ancestor:
                         break
@@ -359,7 +453,7 @@ class Template(MarkupTemplate):
                 # The grand-parent tag is a table cell we should set the
                 # correct value and type for this cell.
                 dico = "{'%s': %s, '%s': guess_type(%s)}"
-                parent.attrib[attrib_name] = dico % (office_name, expr,
+                parent.attrib[py_attrs_attr] = dico % (office_name, expr,
                                                      office_valuetype, expr)
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
@@ -368,13 +462,13 @@ class Template(MarkupTemplate):
         "replaces all draw:frame named 'image: ...' by a draw:image node"
         draw_name = '{%s}name' % self.namespaces['draw']
         draw_image = '{%s}image' % self.namespaces['draw']
-        python_attrs = '{%s}attrs' % self.namespaces['py']
+        py_attrs = '{%s}attrs' % self.namespaces['py']
         xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             d_name = draw.attrib[draw_name]
             attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
             image_node = EtreeElement(draw_image,
-                                      attrib={python_attrs: attr_expr},
+                                      attrib={py_attrs: attr_expr},
                                       nsmap=self.namespaces)
             draw.replace(draw[0], image_node)
 
@@ -391,9 +485,48 @@ class Template(MarkupTemplate):
         serializer = OOSerializer(self.filepath)
         kwargs['make_href'] = ImageHref(serializer.outzip, kwargs)
         kwargs['guess_type'] = guess_type
-        generate_all = super(Template, self).generate(*args, **kwargs)
 
-        return RelatorioStream(generate_all, serializer)
+        counter = ColumnCounter()
+        kwargs['__reset_col_count'] = counter.reset
+        kwargs['__inc_col_count'] = counter.inc
+        kwargs['__store_col_count'] = counter.store
+
+        stream = super(Template, self).generate(*args, **kwargs)
+        if self.has_col_loop:
+            transformation = DuplicateColumnHeaders(counter)
+            col_filter = Transformer('//repeat[namespace-uri()="%s"]'
+                                     % RELATORIO_URI)
+            col_filter = col_filter.apply(transformation)
+            stream = Stream(list(stream), self.serializer) | col_filter
+        return RelatorioStream(stream, serializer)
+
+
+class DuplicateColumnHeaders(object):
+    def __init__(self, counter):
+        self.counter = counter
+
+    def __call__(self, stream):
+        for mark, (kind, data, pos) in stream:
+            # for each repeat tag found
+            if mark is ENTER:
+                # get the number of columns for that table
+                attrs = data[1]
+                table = attrs.get('table')
+                col_count = self.counter.counters[table]
+
+                # collect events (column header tags) to repeat
+                events = []
+                for submark, event in stream:
+                    if submark is EXIT:
+                        break
+                    events.append(event)
+
+                # repeat them
+                for _ in range(col_count):
+                    for event in events:
+                        yield None, event
+            else:
+                yield mark, (kind, data, pos)
 
 
 class OOSerializer:
