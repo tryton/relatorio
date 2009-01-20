@@ -368,7 +368,6 @@ class Template(MarkupTemplate):
                         to_split = []
                         idx = 0
                         childs = list(table_node.iterchildren(table_col_tag))
-                        assert closing_pos < len(childs)
                         for tag in childs:
                             if table_num_col_attr in tag.attrib:
                                 oldidx = idx
