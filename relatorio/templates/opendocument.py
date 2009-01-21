@@ -120,6 +120,18 @@ class ColumnCounter:
                                         self.counters.get(table_name, 0))
 
 
+def wrap_nodes_between(first, last, new_parent):
+    old_parent = first.getparent()
+    for node in first.itersiblings():
+        if node is last:
+            break
+        # appending a node to a new parent also
+        # remove it from its previous parent
+        new_parent.append(node)
+    old_parent.replace(first, new_parent)
+    old_parent.remove(last)
+
+
 class Template(MarkupTemplate):
 
     def __init__(self, source, filepath=None, filename=None, loader=None,
@@ -261,8 +273,10 @@ class Template(MarkupTemplate):
         table_col_tag = '{%s}table-column' % table_namespace
         table_row_tag = '{%s}table-row' % table_namespace
         table_cell_tag = '{%s}table-cell' % table_namespace
+        table_cov_cell_tag = '{%s}covered-table-cell' % table_namespace
         table_num_col_attr = '{%s}number-columns-repeated' % table_namespace
         table_name_attr = '{%s}name' % table_namespace
+        table_rowspan_attr = '{%s}number-rows-spanned' % table_namespace
 
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
@@ -297,6 +311,8 @@ class Template(MarkupTemplate):
                         ancestor = node
                         break
                     except ValueError:
+                        # c_ancestors.index(node) raise ValueError if node is
+                        # not a child of c_ancestors
                         pass
                     o_ancestors.append(node)
                 assert ancestor is not None, \
@@ -326,7 +342,7 @@ class Template(MarkupTemplate):
                     # 2) add increment code (through a py:attrs attribute) on
                     #    the first cell node after the opening (cell node)
                     #    ancestor
-                    enclosed_cell = outermost_o_ancestor.itersiblings().next()
+                    enclosed_cell = outermost_o_ancestor.getnext()
                     assert enclosed_cell.tag == table_cell_tag
                     attr_value = "__inc_col_count(%d)" % loop_id
                     enclosed_cell.attrib[py_attrs_attr] = attr_value
@@ -342,6 +358,7 @@ class Template(MarkupTemplate):
 
                     # find the position in the row of the cells holding the
                     # <for> and </for> instructions
+                    #XXX: count cells only instead of *
                     position_xpath_expr = 'count(preceding-sibling::*)'
                     opening_pos = \
                         int(outermost_o_ancestor.xpath(position_xpath_expr,
@@ -350,7 +367,34 @@ class Template(MarkupTemplate):
                         int(outermost_c_ancestor.xpath(position_xpath_expr,
                                                    namespaces=self.namespaces))
 
-                    # check if this table was already processed
+                    # check whether or not the opening tag spans several rows
+                    o_node_attrs = outermost_o_ancestor.attrib
+                    if table_rowspan_attr in o_node_attrs:
+                        rows_spanned = int(o_node_attrs[table_rowspan_attr])
+                        # if so, we need to replace the corresponding cell on
+                        # the next line (a covered-table-cell) by a duplicate
+                        # py:for node, delete the covered-table-cell
+                        # corresponding to the /for, and move all cells between
+                        # them into the py:for node
+                        row_node = outermost_o_ancestor.getparent()
+                        assert row_node.tag == table_row_tag
+                        next_rows = row_node.itersiblings(table_row_tag)
+                        for row_idx in range(rows_spanned-1):
+                            next_row_node = next_rows.next()
+                            first = next_row_node[opening_pos]
+                            last = next_row_node[closing_pos]
+                            assert first.tag == table_cov_cell_tag
+                            assert last.tag == table_cov_cell_tag
+
+                            # execute moves (add a <py:for> node around
+                            # the column definitions nodes)
+                            tag = '{%s}%s' % (py_namespace, directive)
+                            for_node = EtreeElement(tag,
+                                                    attrib={attr: a_val},
+                                                    nsmap=self.namespaces)
+                            wrap_nodes_between(first, last, for_node)
+
+                    # check if this table's headers were already processed
                     repeat_node = table_node.find(repeat_tag)
                     if repeat_node is not None:
                         prev_pos = (int(repeat_node.attrib['opening']),
@@ -390,39 +434,20 @@ class Template(MarkupTemplate):
                         # need to be deleted. The column headers between them
                         # need to be moved to inside the "repeat" tag (which
                         # is to be created later).
-                        to_remove = []
-                        to_move = []
-                        coldefs = table_node.iterchildren(table_col_tag)
-                        for idx, tag in enumerate(coldefs):
-                            if idx in (opening_pos, closing_pos):
-                                to_remove.append(tag)
-                            if opening_pos < idx < closing_pos:
-                                to_move.append(tag)
-                            elif idx > closing_pos:
-                                break
-                        assert len(to_remove) == 2, "failed %d %d" \
-                               % (opening_pos, closing_pos)
-                        assert to_move
-
-                        # execute deletes
-                        for node in to_remove:
-                            table_node.remove(node)
+                        coldefs = list(table_node.iterchildren(table_col_tag))
+                        first = table_node[opening_pos]
+                        last = table_node[closing_pos]
 
                         # execute moves (add a <relatorio:repeat> node around
                         # the column definitions nodes)
-                        o_pos, c_pos = str(opening_pos), str(closing_pos)
-                        repeat_node = EtreeElement(repeat_tag,
-                                                   attrib={
-                                                       "opening": o_pos,
-                                                       "closing": c_pos,
-                                                       "table": table_name},
+                        attribs = {
+                           "opening": str(opening_pos),
+                           "closing": str(closing_pos),
+                           "table": table_name
+                        }
+                        repeat_node = EtreeElement(repeat_tag, attrib=attribs,
                                                    nsmap=self.namespaces)
-
-                        for node in to_move[1:]:
-                            table_node.remove(node)
-                            repeat_node.append(node)
-                        table_node.replace(to_move[0], repeat_node)
-                        repeat_node.append(to_move[0])
+                        wrap_nodes_between(first, last, repeat_node)
 
                 # - we create a <py:xxx> node
                 genshi_node = EtreeElement('{%s}%s' % (py_namespace,
@@ -430,18 +455,13 @@ class Template(MarkupTemplate):
                                            attrib={attr: a_val},
                                            nsmap=self.namespaces)
 
-                # - we add all the nodes between the opening and closing
-                #   statements to this new node
-                for node in outermost_o_ancestor.itersiblings():
-                    if node is outermost_c_ancestor:
-                        break
-                    genshi_node.append(node)
-
+                # - we move all the nodes between the opening and closing
+                #   statements to this new node (append also removes from old
+                #   parent)
                 # - we replace the opening statement by the <py:xxx> node
-                ancestor.replace(outermost_o_ancestor, genshi_node)
-
                 # - we delete the closing statement (and its ancestors)
-                ancestor.remove(outermost_c_ancestor)
+                wrap_nodes_between(outermost_o_ancestor, outermost_c_ancestor,
+                                   genshi_node)
             else:
                 # It's not a genshi statement it's a python expression
                 r_node.attrib[genshi_replace] = expr
