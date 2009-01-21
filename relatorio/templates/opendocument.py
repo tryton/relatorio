@@ -371,16 +371,33 @@ class Template(MarkupTemplate):
                     o_node_attrs = outermost_o_ancestor.attrib
                     if table_rowspan_attr in o_node_attrs:
                         rows_spanned = int(o_node_attrs[table_rowspan_attr])
+
+                        # a_val == "target in iterable"
+                        target, iterable = a_val.split(' in ', 1)
+                        temp_var = "temp%d" % id(outermost_o_ancestor)
+                        # I need to get "temp_iterable = list(iterable)"
+                        vars = "%s = list(%s)" % (temp_var, iterable.strip())
+                        # transform a_val to "target in temp_iterable"
+                        a_val = "%s in %s" % (target, temp_var)
+
+                        with_node = EtreeElement('{%s}with' % py_namespace,
+                                                 attrib={"vars": vars},
+                                                 nsmap=self.namespaces)
+
                         # if so, we need to replace the corresponding cell on
                         # the next line (a covered-table-cell) by a duplicate
                         # py:for node, delete the covered-table-cell
                         # corresponding to the /for, and move all cells between
                         # them into the py:for node
                         row_node = outermost_o_ancestor.getparent()
+                        row_node.addprevious(with_node)
+                        rows_to_wrap = [row_node]
+
                         assert row_node.tag == table_row_tag
                         next_rows = row_node.itersiblings(table_row_tag)
                         for row_idx in range(rows_spanned-1):
                             next_row_node = next_rows.next()
+                            rows_to_wrap.append(next_row_node)
                             first = next_row_node[opening_pos]
                             last = next_row_node[closing_pos]
                             assert first.tag == table_cov_cell_tag
@@ -393,6 +410,9 @@ class Template(MarkupTemplate):
                                                     attrib={attr: a_val},
                                                     nsmap=self.namespaces)
                             wrap_nodes_between(first, last, for_node)
+
+                        for node in rows_to_wrap:
+                            with_node.append(node)
 
                     # check if this table's headers were already processed
                     repeat_node = table_node.find(repeat_tag)
