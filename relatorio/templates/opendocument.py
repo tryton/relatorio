@@ -85,8 +85,7 @@ class ImageHref:
         self.zip = zfile
         self.context = context.copy()
 
-    def __call__(self, expr, name):
-        #FIXME: name argument is unused
+    def __call__(self, expr):
         bitstream, mimetype = expr
         if isinstance(bitstream, Report):
             bitstream = bitstream(**self.context).render()
@@ -102,8 +101,8 @@ class ImageHref:
 
 
 class ColumnCounter:
-    """A class used to add the correct number of column definitions to a
-    table containing an horizontal repetition"
+    """A class used to count the actual maximum number of cells (and thus
+    columns) a table contains accross its rows.
     """
     def __init__(self):
         self.temp_counters = {}
@@ -121,6 +120,10 @@ class ColumnCounter:
 
 
 def wrap_nodes_between(first, last, new_parent):
+    """An helper function to move all nodes between two nodes to a new node
+    and add that new node to their former parent. The boundary nodes are
+    removed in the process.
+    """
     old_parent = first.getparent()
     for node in first.itersiblings():
         if node is last:
@@ -448,14 +451,17 @@ class Template(MarkupTemplate):
 
                 # The grand-parent tag is a table cell we should set the
                 # correct value and type for this cell.
-                dico = "{'%s': %s, '%s': guess_type(%s)}"
+                dico = "{'%s': %s, '%s': __relatorio_guess_type(%s)}"
                 parent.attrib[py_attrs_attr] = dico % (office_name, expr,
-                                                     office_valuetype, expr)
+                                                       office_valuetype, expr)
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
 
     def _handle_row_spanned_column_loops(self, parsed, outer_o_node,
                                          opening_pos, closing_pos):
+        """handles column repetitions which span several rows, by duplicating
+        the py:for node for each row, and make the loops work on a copy of the
+        original iterable as to not exhaust generators."""
         _, directive, attr, a_val = parsed
         table_rowspan_attr = '{%s}number-rows-spanned' \
                              % self.namespaces['table']
@@ -515,14 +521,14 @@ class Template(MarkupTemplate):
         return a_val
 
     def _handle_images(self, tree):
-        "replaces all draw:frame named 'image: ...' by a draw:image node"
+        "replaces all draw:frame named 'image: ...' by draw:image nodes"
         draw_name = '{%s}name' % self.namespaces['draw']
         draw_image = '{%s}image' % self.namespaces['draw']
         py_attrs = '{%s}attrs' % self.namespaces['py']
         xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             d_name = draw.attrib[draw_name]
-            attr_expr = "make_href(%s, %r)" % (d_name[7:], d_name[7:])
+            attr_expr = "__relatorio_make_href(%s)" % d_name[7:]
             image_node = EtreeElement(draw_image,
                                       attrib={py_attrs: attr_expr},
                                       nsmap=self.namespaces)
@@ -539,8 +545,8 @@ class Template(MarkupTemplate):
     def generate(self, *args, **kwargs):
         "creates the RelatorioStream."
         serializer = OOSerializer(self.filepath)
-        kwargs['make_href'] = ImageHref(serializer.outzip, kwargs)
-        kwargs['guess_type'] = guess_type
+        kwargs['__relatorio_make_href'] = ImageHref(serializer.outzip, kwargs)
+        kwargs['__relatorio_guess_type'] = guess_type
 
         counter = ColumnCounter()
         kwargs['__relatorio_reset_col_count'] = counter.reset
