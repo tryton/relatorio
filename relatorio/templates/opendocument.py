@@ -167,9 +167,9 @@ class Template(MarkupTemplate):
             content = zf.read(c_path)
             styles = zf.read(s_path)
 
-            c_parsed = template._parse(self.insert_directives(zf.read(c_path)),
+            c_parsed = template._parse(self.insert_directives(content),
                                        encoding)
-            s_parsed = template._parse(self.insert_directives(zf.read(s_path)),
+            s_parsed = template._parse(self.insert_directives(styles),
                                        encoding)
             content_files.append((c_path, c_parsed))
             styles_files.append((s_path, s_parsed))
