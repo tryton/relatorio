@@ -22,6 +22,7 @@ __metaclass__ = type
 
 import re
 import md5
+import time
 import urllib
 import zipfile
 from cStringIO import StringIO
@@ -400,7 +401,7 @@ class Template(MarkupTemplate):
 
         # find the position in the row of the cells holding the
         # <for> and </for> instructions
-        #XXX: count cells only instead of * ?
+        # We use "*" so as to count both normal cells and covered/hidden cells
         position_xpath_expr = 'count(preceding-sibling::*)'
         opening_pos = \
             int(outer_o_node.xpath(position_xpath_expr,
@@ -620,13 +621,19 @@ class OOSerializer:
                 continue
             files.setdefault(stream_for, []).append((kind, data, pos))
 
+        now = time.localtime()[:6]
         for f_info in self.inzip.infolist():
             if f_info.filename.startswith('ObjectReplacements'):
                 continue
             elif f_info.filename in files:
                 stream = files[f_info.filename]
-                self.outzip.writestr(f_info.filename,
-                                     output_encode(self.xml_serializer(stream)))
+                # create a new file descriptor, copying some attributes from
+                # the original file
+                new_info = zipfile.ZipInfo(f_info.filename, now)
+                for attr in ('compress_type', 'flag_bits', 'create_system'):
+                    setattr(new_info, attr, getattr(f_info, attr))
+                serialized_stream = output_encode(self.xml_serializer(stream))
+                self.outzip.writestr(new_info, serialized_stream)
             else:
                 self.outzip.writestr(f_info, self.inzip.read(f_info.filename))
         self.inzip.close()
