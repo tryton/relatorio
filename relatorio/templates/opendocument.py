@@ -272,12 +272,8 @@ class Template(MarkupTemplate):
         """
         # Some tag/attribute name constants
         table_namespace = self.namespaces['table']
-        table_tag = '{%s}table' % table_namespace
-        table_col_tag = '{%s}table-column' % table_namespace
         table_row_tag = '{%s}table-row' % table_namespace
         table_cell_tag = '{%s}table-cell' % table_namespace
-        table_num_col_attr = '{%s}number-columns-repeated' % table_namespace
-        table_name_attr = '{%s}name' % table_namespace
 
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
@@ -285,8 +281,6 @@ class Template(MarkupTemplate):
         py_namespace = self.namespaces['py']
         py_attrs_attr = '{%s}attrs' % py_namespace
         py_replace = '{%s}replace' % py_namespace
-
-        repeat_tag = '{%s}repeat' % self.namespaces['relatorio']
 
         r_statements, closing_tags = self._relatorio_statements(tree)
 
@@ -323,111 +317,10 @@ class Template(MarkupTemplate):
 
                 # handle horizontal repetitions (over columns)
                 if directive == "for" and ancestor.tag == table_row_tag:
-                    self.has_col_loop = True
-
-                    # table (it is not necessarily the parent of ancestor)
-                    table_node = ancestor.iterancestors(table_tag).next()
-                    table_name = table_node.attrib[table_name_attr]
-
-                    # add counting instructions
-                    loop_id = id(opening)
-
-                    # 1) add reset counter code on the row opening tag
-                    #    (through a py:attrs attribute).
-                    # Note that table_name is not needed in the first two
-                    # operations, but a unique id within the table is required
-                    # to support nested column repetition
-                    ancestor.attrib[py_attrs_attr] = \
-                        "__relatorio_reset_col_count(%d)" % loop_id
-
-                    # 2) add increment code (through a py:attrs attribute) on
-                    #    the first cell node after the opening (cell node)
-                    #    ancestor
-                    enclosed_cell = outermost_o_ancestor.getnext()
-                    assert enclosed_cell.tag == table_cell_tag
-                    enclosed_cell.attrib[py_attrs_attr] = \
-                        "__relatorio_inc_col_count(%d)" % loop_id
-
-                    # 3) add "store count" code as a py:replace node, as the
-                    #    last child of the row
-                    attr_value = "__relatorio_store_col_count(%d, %r)" \
-                                 % (loop_id, table_name)
-                    replace_node = EtreeElement(py_replace,
-                                                attrib={'value': attr_value},
-                                                nsmap=self.namespaces)
-                    ancestor.append(replace_node)
-
-                    # find the position in the row of the cells holding the
-                    # <for> and </for> instructions
-                    #XXX: count cells only instead of *
-                    position_xpath_expr = 'count(preceding-sibling::*)'
-                    opening_pos = \
-                        int(outermost_o_ancestor.xpath(position_xpath_expr,
-                                                   namespaces=self.namespaces))
-                    closing_pos = \
-                        int(outermost_c_ancestor.xpath(position_xpath_expr,
-                                                   namespaces=self.namespaces))
-
-                    # check whether or not the opening tag spans several rows
-                    a_val = self._handle_row_spanned_column_loops(parsed,
-                                outermost_o_ancestor, opening_pos, closing_pos)
-
-                    # check if this table's headers were already processed
-                    repeat_node = table_node.find(repeat_tag)
-                    if repeat_node is not None:
-                        prev_pos = (int(repeat_node.attrib['opening']),
-                                    int(repeat_node.attrib['closing']))
-                        if (opening_pos, closing_pos) != prev_pos:
-                            raise Exception(
-                                'Incoherent column repetition found! '
-                                'If a table has several lines with repeated '
-                                'columns, the repetition need to be on the '
-                                'same columns across all lines.')
-                    else:
-                        # compute splits: oo collapses the headers of adjacent
-                        # columns which use the same style. We need to split
-                        # any column header which is repeated so many times
-                        # that it encompasses any of the column headers that
-                        # we need to repeat
-                        to_split = []
-                        idx = 0
-                        childs = list(table_node.iterchildren(table_col_tag))
-                        for tag in childs:
-                            if table_num_col_attr in tag.attrib:
-                                oldidx = idx
-                                idx += int(tag.attrib[table_num_col_attr])
-                                if oldidx < opening_pos < idx or \
-                                   oldidx < closing_pos < idx:
-                                    to_split.append(tag)
-                            else:
-                                idx += 1
-
-                        # split tags
-                        for tag in to_split:
-                            tag_pos = table_node.index(tag)
-                            num = int(tag.attrib.pop(table_num_col_attr))
-                            new_tags = [deepcopy(tag) for _ in range(num)]
-                            table_node[tag_pos:tag_pos+1] = new_tags
-
-                        # recompute the list of column headers as it could
-                        # have changed.
-                        coldefs = list(table_node.iterchildren(table_col_tag))
-
-                        # compute the column header nodes corresponding to
-                        # the opening and closing tags.
-                        first = table_node[opening_pos]
-                        last = table_node[closing_pos]
-
-                        # add a <relatorio:repeat> node around the column
-                        # definitions nodes
-                        attribs = {
-                           "opening": str(opening_pos),
-                           "closing": str(closing_pos),
-                           "table": table_name
-                        }
-                        repeat_node = EtreeElement(repeat_tag, attrib=attribs,
-                                                   nsmap=self.namespaces)
-                        wrap_nodes_between(first, last, repeat_node)
+                    a_val = self._handle_column_loops(parsed, ancestor,
+                                                      opening,
+                                                      outermost_o_ancestor,
+                                                      outermost_c_ancestor)
 
                 # - we create a <py:xxx> node
                 genshi_node = EtreeElement('{%s}%s' % (py_namespace,
@@ -457,17 +350,137 @@ class Template(MarkupTemplate):
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
 
-    def _handle_row_spanned_column_loops(self, parsed, outer_o_node,
+    def _handle_column_loops(self, statement, ancestor, opening,
+                             outer_o_node, outer_c_node):
+        _, directive, attr, a_val = statement
+
+        self.has_col_loop = True
+
+        table_namespace = self.namespaces['table']
+        table_col_tag = '{%s}table-column' % table_namespace
+        table_num_col_attr = '{%s}number-columns-repeated' % table_namespace
+
+        py_namespace = self.namespaces['py']
+        py_attrs_attr = '{%s}attrs' % py_namespace
+
+        repeat_tag = '{%s}repeat' % self.namespaces['relatorio']
+
+        # table node (it is not necessarily the direct parent of ancestor)
+        table_node = ancestor.iterancestors('{%s}table' % table_namespace) \
+                             .next()
+        table_name = table_node.attrib['{%s}name' % table_namespace]
+
+        # add counting instructions
+        loop_id = id(opening)
+
+        # 1) add reset counter code on the row opening tag
+        #    (through a py:attrs attribute).
+        # Note that table_name is not needed in the first two
+        # operations, but a unique id within the table is required
+        # to support nested column repetition
+        ancestor.attrib[py_attrs_attr] = \
+            "__relatorio_reset_col_count(%d)" % loop_id
+
+        # 2) add increment code (through a py:attrs attribute) on
+        #    the first cell node after the opening (cell node)
+        #    ancestor
+        enclosed_cell = outer_o_node.getnext()
+        assert enclosed_cell.tag == '{%s}table-cell' % table_namespace
+        enclosed_cell.attrib[py_attrs_attr] = \
+            "__relatorio_inc_col_count(%d)" % loop_id
+
+        # 3) add "store count" code as a py:replace node, as the
+        #    last child of the row
+        attr_value = "__relatorio_store_col_count(%d, %r)" \
+                     % (loop_id, table_name)
+        replace_node = EtreeElement('{%s}replace' % py_namespace,
+                                    attrib={'value': attr_value},
+                                    nsmap=self.namespaces)
+        ancestor.append(replace_node)
+
+        # find the position in the row of the cells holding the
+        # <for> and </for> instructions
+        #XXX: count cells only instead of * ?
+        position_xpath_expr = 'count(preceding-sibling::*)'
+        opening_pos = \
+            int(outer_o_node.xpath(position_xpath_expr,
+                                   namespaces=self.namespaces))
+        closing_pos = \
+            int(outer_c_node.xpath(position_xpath_expr,
+                                   namespaces=self.namespaces))
+
+        # check whether or not the opening tag spans several rows
+        a_val = self._handle_row_spanned_column_loops(
+                    statement, outer_o_node, opening_pos, closing_pos)
+
+        # check if this table's headers were already processed
+        repeat_node = table_node.find(repeat_tag)
+        if repeat_node is not None:
+            prev_pos = (int(repeat_node.attrib['opening']),
+                        int(repeat_node.attrib['closing']))
+            if (opening_pos, closing_pos) != prev_pos:
+                raise Exception(
+                    'Incoherent column repetition found! '
+                    'If a table has several lines with repeated '
+                    'columns, the repetition need to be on the '
+                    'same columns across all lines.')
+        else:
+            # compute splits: oo collapses the headers of adjacent
+            # columns which use the same style. We need to split
+            # any column header which is repeated so many times
+            # that it encompasses any of the column headers that
+            # we need to repeat
+            to_split = []
+            idx = 0
+            childs = list(table_node.iterchildren(table_col_tag))
+            for tag in childs:
+                inc = int(tag.attrib.get(table_num_col_attr, 1))
+                oldidx = idx
+                idx += inc
+                if oldidx < opening_pos < idx or \
+                   oldidx < closing_pos < idx:
+                    to_split.append(tag)
+
+            # split tags
+            for tag in to_split:
+                tag_pos = table_node.index(tag)
+                num = int(tag.attrib.pop(table_num_col_attr))
+                new_tags = [deepcopy(tag) for _ in range(num)]
+                table_node[tag_pos:tag_pos+1] = new_tags
+
+            # recompute the list of column headers as it could
+            # have changed.
+            coldefs = list(table_node.iterchildren(table_col_tag))
+
+            # compute the column header nodes corresponding to
+            # the opening and closing tags.
+            first = table_node[opening_pos]
+            last = table_node[closing_pos]
+
+            # add a <relatorio:repeat> node around the column
+            # definitions nodes
+            attribs = {
+               "opening": str(opening_pos),
+               "closing": str(closing_pos),
+               "table": table_name
+            }
+            repeat_node = EtreeElement(repeat_tag, attrib=attribs,
+                                       nsmap=self.namespaces)
+            wrap_nodes_between(first, last, repeat_node)
+        return a_val
+
+    def _handle_row_spanned_column_loops(self, statement, outer_o_node,
                                          opening_pos, closing_pos):
         """handles column repetitions which span several rows, by duplicating
         the py:for node for each row, and make the loops work on a copy of the
         original iterable as to not exhaust generators."""
-        _, directive, attr, a_val = parsed
+
+        _, directive, attr, a_val = statement
         table_rowspan_attr = '{%s}number-rows-spanned' \
                              % self.namespaces['table']
-        rows_spanned = int(outer_o_node.attrib.get(table_rowspan_attr, 1))
 
         # checks wether there is a (meaningful) rowspan
+        rows_spanned = int(outer_o_node.attrib.get(table_rowspan_attr, 1))
         if rows_spanned == 1:
             return a_val
 

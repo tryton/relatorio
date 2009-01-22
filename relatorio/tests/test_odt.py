@@ -34,13 +34,13 @@ from genshi.template.eval import UndefinedError
 from templates.opendocument import Template, GENSHI_EXPR
 
 def pseudo_gettext(string):
-    catalog = {'Mes collègues sont:': 'My collegues are:',
+    catalog = {'Mes collègues sont:': 'My colleagues are:',
                'Bonjour,': 'Hello,',
                'Je suis un test de templating en odt.':
                 'I am an odt templating test',
                'Felix da housecat': unicode('Félix le chat de la maison',
                                             'utf8'),
-               'We sell stuffs': u'On vend des brols',
+               'We sell stuff': u'On vend des choses',
               }
     return catalog.get(string, string)
 
@@ -65,7 +65,7 @@ class TestOOTemplating(object):
                                 (file(os.path.join(thisdir, 'two.png')),
                                  'image/png')],
                      'oeuf': file(os.path.join(thisdir, 'egg.jpg')),
-                     'footer': u'We sell stuffs'}
+                     'footer': u'We sell stuff'}
 
     def test_init(self):
         "Testing the correct handling of the styles.xml and content.xml files"
@@ -80,17 +80,16 @@ class TestOOTemplating(object):
         xmlns:xlink="urn:xlink">
         <text:a xlink:href="relatorio://foo">foo</text:a>
         </b:a>''' % 'urn:text'
-        parsed = self.oot.insert_directives(xml)
-        root = lxml.etree.parse(StringIO(xml)).getroot()
-        root_parsed = lxml.etree.parse(parsed).getroot()
-        eq_(root_parsed[0].attrib['{http://genshi.edgewall.org/}replace'],
-            'foo')
+        interpolated = self.oot.insert_directives(xml)
+        root_interpolated = lxml.etree.parse(interpolated).getroot()
+        root_attrs = root_interpolated[0].attrib
+        eq_(root_attrs['{http://genshi.edgewall.org/}replace'], 'foo')
 
     def test_styles(self):
         "Testing that styles get rendered"
         stream = self.oot.generate(**self.data)
         rendered = stream.events.render()
-        ok_('We sell stuffs' in rendered)
+        ok_('We sell stuff' in rendered)
 
         dico = self.data.copy()
         del dico['footer']
@@ -116,8 +115,8 @@ class TestOOTemplating(object):
         ok_("I am an odt templating test" in translated_xml)
         ok_('Felix da housecat' not in translated_xml)
         ok_('Félix le chat de la maison' in translated_xml)
-        ok_('We sell stuffs' not in translated_xml)
-        ok_('On vend des brols' in translated_xml)
+        ok_('We sell stuff' not in translated_xml)
+        ok_('On vend des choses' in translated_xml)
 
     def test_images(self):
         "Testing the image replacement directive"
