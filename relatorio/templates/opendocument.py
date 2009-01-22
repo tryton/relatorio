@@ -273,17 +273,15 @@ class Template(MarkupTemplate):
         table_col_tag = '{%s}table-column' % table_namespace
         table_row_tag = '{%s}table-row' % table_namespace
         table_cell_tag = '{%s}table-cell' % table_namespace
-        table_cov_cell_tag = '{%s}covered-table-cell' % table_namespace
         table_num_col_attr = '{%s}number-columns-repeated' % table_namespace
         table_name_attr = '{%s}name' % table_namespace
-        table_rowspan_attr = '{%s}number-rows-spanned' % table_namespace
 
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
 
         py_namespace = self.namespaces['py']
         py_attrs_attr = '{%s}attrs' % py_namespace
-        genshi_replace = '{%s}replace' % py_namespace
+        py_replace = '{%s}replace' % py_namespace
 
         repeat_tag = '{%s}repeat' % self.namespaces['relatorio']
 
@@ -320,7 +318,7 @@ class Template(MarkupTemplate):
                 outermost_o_ancestor = o_ancestors[-1]
                 outermost_c_ancestor = c_ancestors[-1]
 
-                # handle horizontal repetition (over columns)
+                # handle horizontal repetitions (over columns)
                 if directive == "for" and ancestor.tag == table_row_tag:
                     self.has_col_loop = True
 
@@ -336,22 +334,22 @@ class Template(MarkupTemplate):
                     # Note that table_name is not needed in the first two
                     # operations, but a unique id within the table is required
                     # to support nested column repetition
-                    attr_value = "__reset_col_count(%d)" % loop_id
-                    ancestor.attrib[py_attrs_attr] = attr_value
+                    ancestor.attrib[py_attrs_attr] = \
+                        "__relatorio_reset_col_count(%d)" % loop_id
 
                     # 2) add increment code (through a py:attrs attribute) on
                     #    the first cell node after the opening (cell node)
                     #    ancestor
                     enclosed_cell = outermost_o_ancestor.getnext()
                     assert enclosed_cell.tag == table_cell_tag
-                    attr_value = "__inc_col_count(%d)" % loop_id
-                    enclosed_cell.attrib[py_attrs_attr] = attr_value
+                    enclosed_cell.attrib[py_attrs_attr] = \
+                        "__relatorio_inc_col_count(%d)" % loop_id
 
                     # 3) add "store count" code as a py:replace node, as the
                     #    last child of the row
-                    attr_value = "__store_col_count(%d, %r)" % (loop_id,
-                                                                table_name)
-                    replace_node = EtreeElement('{%s}replace' % py_namespace,
+                    attr_value = "__relatorio_store_col_count(%d, %r)" \
+                                 % (loop_id, table_name)
+                    replace_node = EtreeElement(py_replace,
                                                 attrib={'value': attr_value},
                                                 nsmap=self.namespaces)
                     ancestor.append(replace_node)
@@ -368,51 +366,8 @@ class Template(MarkupTemplate):
                                                    namespaces=self.namespaces))
 
                     # check whether or not the opening tag spans several rows
-                    o_node_attrs = outermost_o_ancestor.attrib
-                    if table_rowspan_attr in o_node_attrs:
-                        rows_spanned = int(o_node_attrs[table_rowspan_attr])
-
-                        # a_val == "target in iterable"
-                        target, iterable = a_val.split(' in ', 1)
-                        temp_var = "temp%d" % id(outermost_o_ancestor)
-                        # I need to get "temp_iterable = list(iterable)"
-                        vars = "%s = list(%s)" % (temp_var, iterable.strip())
-                        # transform a_val to "target in temp_iterable"
-                        a_val = "%s in %s" % (target, temp_var)
-
-                        with_node = EtreeElement('{%s}with' % py_namespace,
-                                                 attrib={"vars": vars},
-                                                 nsmap=self.namespaces)
-
-                        # if so, we need to replace the corresponding cell on
-                        # the next line (a covered-table-cell) by a duplicate
-                        # py:for node, delete the covered-table-cell
-                        # corresponding to the /for, and move all cells between
-                        # them into the py:for node
-                        row_node = outermost_o_ancestor.getparent()
-                        row_node.addprevious(with_node)
-                        rows_to_wrap = [row_node]
-
-                        assert row_node.tag == table_row_tag
-                        next_rows = row_node.itersiblings(table_row_tag)
-                        for row_idx in range(rows_spanned-1):
-                            next_row_node = next_rows.next()
-                            rows_to_wrap.append(next_row_node)
-                            first = next_row_node[opening_pos]
-                            last = next_row_node[closing_pos]
-                            assert first.tag == table_cov_cell_tag
-                            assert last.tag == table_cov_cell_tag
-
-                            # execute moves (add a <py:for> node around
-                            # the column definitions nodes)
-                            tag = '{%s}%s' % (py_namespace, directive)
-                            for_node = EtreeElement(tag,
-                                                    attrib={attr: a_val},
-                                                    nsmap=self.namespaces)
-                            wrap_nodes_between(first, last, for_node)
-
-                        for node in rows_to_wrap:
-                            with_node.append(node)
+                    a_val = self._handle_row_spanned_column_loops(parsed,
+                                outermost_o_ancestor, opening_pos, closing_pos)
 
                     # check if this table's headers were already processed
                     repeat_node = table_node.find(repeat_tag)
@@ -426,9 +381,11 @@ class Template(MarkupTemplate):
                                 'columns, the repetition need to be on the '
                                 'same columns across all lines.')
                     else:
-                        # compute splits: we need to split any column header
-                        # which is repeated so many times that it encompass
-                        # any of the column headers that we need to repeat
+                        # compute splits: oo collapses the headers of adjacent
+                        # columns which use the same style. We need to split
+                        # any column header which is repeated so many times
+                        # that it encompasses any of the column headers that
+                        # we need to repeat
                         to_split = []
                         idx = 0
                         childs = list(table_node.iterchildren(table_col_tag))
@@ -449,17 +406,17 @@ class Template(MarkupTemplate):
                             new_tags = [deepcopy(tag) for _ in range(num)]
                             table_node[tag_pos:tag_pos+1] = new_tags
 
-                        # compute moves and deletes: the column headers
-                        # corresponding to the opening and closing tags
-                        # need to be deleted. The column headers between them
-                        # need to be moved to inside the "repeat" tag (which
-                        # is to be created later).
+                        # recompute the list of column headers as it could
+                        # have changed.
                         coldefs = list(table_node.iterchildren(table_col_tag))
+
+                        # compute the column header nodes corresponding to
+                        # the opening and closing tags.
                         first = table_node[opening_pos]
                         last = table_node[closing_pos]
 
-                        # execute moves (add a <relatorio:repeat> node around
-                        # the column definitions nodes)
+                        # add a <relatorio:repeat> node around the column
+                        # definitions nodes
                         attribs = {
                            "opening": str(opening_pos),
                            "closing": str(closing_pos),
@@ -484,7 +441,7 @@ class Template(MarkupTemplate):
                                    genshi_node)
             else:
                 # It's not a genshi statement it's a python expression
-                r_node.attrib[genshi_replace] = expr
+                r_node.attrib[py_replace] = expr
                 parent = r_node.getparent().getparent()
                 if parent is None or parent.tag != table_cell_tag:
                     continue
@@ -496,6 +453,66 @@ class Template(MarkupTemplate):
                                                      office_valuetype, expr)
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
+
+    def _handle_row_spanned_column_loops(self, parsed, outer_o_node,
+                                         opening_pos, closing_pos):
+        _, directive, attr, a_val = parsed
+        table_rowspan_attr = '{%s}number-rows-spanned' \
+                             % self.namespaces['table']
+        rows_spanned = int(outer_o_node.attrib.get(table_rowspan_attr, 1))
+
+        # checks wether there is a (meaningful) rowspan
+        if rows_spanned == 1:
+            return a_val
+
+        py_namespace = self.namespaces['py']
+        table_namespace = self.namespaces['table']
+        table_row_tag = '{%s}table-row' % table_namespace
+        table_cov_cell_tag = '{%s}covered-table-cell' % table_namespace
+
+        # if so, we need to:
+
+        # 1) create a with node to define a temporary variable
+        temp_var = "__relatorio_temp%d" % id(outer_o_node)
+        # a_val == "target in iterable"
+        target, iterable = a_val.split(' in ', 1)
+        vars = "%s = list(%s)" % (temp_var, iterable.strip())
+        with_node = EtreeElement('{%s}with' % py_namespace,
+                                 attrib={"vars": vars},
+                                 nsmap=self.namespaces)
+
+        # 2) transform a_val to use that temporary variable
+        a_val = "%s in %s" % (target, temp_var)
+
+        # 3) wrap the corresponding cells on the next row(s)
+        #    (those should be covered-table-cell) inside a
+        #    duplicate py:for node (looping on the temporary
+        #    variable).
+        row_node = outer_o_node.getparent()
+        row_node.addprevious(with_node)
+        rows_to_wrap = [row_node]
+        assert row_node.tag == table_row_tag
+        next_rows = row_node.itersiblings(table_row_tag)
+        for row_idx in range(rows_spanned-1):
+            next_row_node = next_rows.next()
+            rows_to_wrap.append(next_row_node)
+            # compute the start and end nodes
+            first = next_row_node[opening_pos]
+            last = next_row_node[closing_pos]
+            assert first.tag == table_cov_cell_tag
+            assert last.tag == table_cov_cell_tag
+            # wrap them
+            tag = '{%s}%s' % (py_namespace, directive)
+            for_node = EtreeElement(tag,
+                                    attrib={attr: a_val},
+                                    nsmap=self.namespaces)
+            wrap_nodes_between(first, last, for_node)
+
+        # 4) wrap all the corresponding rows indide the "with"
+        #    node
+        for node in rows_to_wrap:
+            with_node.append(node)
+        return a_val
 
     def _handle_images(self, tree):
         "replaces all draw:frame named 'image: ...' by a draw:image node"
@@ -526,9 +543,9 @@ class Template(MarkupTemplate):
         kwargs['guess_type'] = guess_type
 
         counter = ColumnCounter()
-        kwargs['__reset_col_count'] = counter.reset
-        kwargs['__inc_col_count'] = counter.inc
-        kwargs['__store_col_count'] = counter.store
+        kwargs['__relatorio_reset_col_count'] = counter.reset
+        kwargs['__relatorio_inc_col_count'] = counter.inc
+        kwargs['__relatorio_store_col_count'] = counter.store
 
         stream = super(Template, self).generate(*args, **kwargs)
         if self.has_col_loop:
