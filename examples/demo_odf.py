@@ -18,21 +18,37 @@ if __name__ == '__main__':
     inv['chart'] = repos.classes[Invoice].ids['pie']
 
     # ODT
+    print "generating output_basic.odt... ",
     basic_report, _ = repos.classes[Invoice].ids['basic']
-    file('bonham_basic.odt', 'wb').write(basic_report(o=inv).render().getvalue())
+    data = basic_report(o=inv).render().getvalue()
+    file('output_basic.odt', 'wb').write(data)
+    print "done"
+
+    print "generating output_complicated.odt... ",
     report, _ = repos.classes[Invoice].ids['complicated']
-    file('bonham_complicated.odt', 'wb').write(report(o=inv).render().getvalue())
+    data = report(o=inv).render().getvalue()
+    file('output_complicated.odt', 'wb').write(data)
+    print "done"
 
-    # ODS
-    ods_report, _ = repos.classes[Invoice].ids['pivot']
-    file('bonham_pivot.ods', 'wb').write(ods_report(o=inv).render().getvalue())
-
-    # ODP
-    odp_report, _ = repos.classes[Invoice].ids['presentation']
-    file('bonham_presentation.odp', 'wb').write(odp_report(o=inv).render().getvalue())
-
-    # Columns example
+    print "generating output_columns.odt... ",
     column_report, _ = repos.classes[None].ids['column']
     lst = [[], ['i'], ['a', 'b'], [1, 2, 3], ['I', 'II', 'III', 'IV']]
-    file('test_columns.odt',
-         'wb').write(column_report(lst=lst).render().getvalue())
+    titles = ['first', 'second', 'third', 'fourth']
+    data = column_report(titles=titles, lst=lst).render().getvalue()
+    file('output_columns.odt', 'wb').write(data)
+    print "done"
+
+    # ODS
+    print "generating output_pivot.ods... ",
+    ods_report, _ = repos.classes[Invoice].ids['pivot']
+    data = ods_report(o=inv).render().getvalue()
+    file('output_pivot.ods', 'wb').write(data)
+    print "done"
+
+    # ODP
+    print "generating output_presentation.odp... ",
+    odp_report, _ = repos.classes[Invoice].ids['presentation']
+    data = odp_report(o=inv).render().getvalue()
+    file('output_presentation.odp', 'wb').write(data)
+    print "done"
+
