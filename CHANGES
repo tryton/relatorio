@@ -1,3 +1,13 @@
+0.5.0 - 20090123
+ * Added Text and XML Template to the TemplateLoader
+ * Splitted mimetypes and ids in the ReportRepository
+ * RelatorioStream now has a __str__ method
+ * OOTemplate: ChartTemplate can be included
+ * OOTemplate: Correctly handle content type in the table cells
+ * OOTemplate: Better closing/opening tag detection algorithm
+ * OOTemplate: Looping on columns now work in OOTemplates
+ * OOTemplate: Using compression
+
 0.4.1 - 20081110
  * Support for upstream PyCha since the most annoying bug has been fixed
  * Removed the entrypoint stuff that was confusing lot of users
