@@ -295,8 +295,8 @@ class Template(MarkupTemplate):
 
                 # - we find the nearest common ancestor of the closing and
                 #   opening statements
-                o_ancestors = []
-                c_ancestors = list(closing.iterancestors())
+                o_ancestors = [opening]
+                c_ancestors = [closing] + list(closing.iterancestors())
                 ancestor = None
                 for node in opening.iterancestors():
                     try:
@@ -313,6 +313,7 @@ class Template(MarkupTemplate):
                     o_ancestors.append(node)
                 assert ancestor is not None, \
                        "No common ancestor found for opening and closing tag"
+
                 outermost_o_ancestor = o_ancestors[-1]
                 outermost_c_ancestor = c_ancestors[-1]
 
