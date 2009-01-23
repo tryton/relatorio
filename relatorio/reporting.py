@@ -89,9 +89,6 @@ class DefaultFactory:
 
     It just returns a copy of the data it receives"""
 
-    def __init__(self, klass):
-        self.working_on = klass
-
     def __call__(self, **kwargs):
         data = kwargs.copy()
         return data
@@ -154,7 +151,7 @@ class ReportRepository:
         if data_factory is None:
             data_factory = self.default_factory
         reports = self.classes.setdefault(klass, ReportDict())
-        report = Report(_absolute(template_path), mimetype, data_factory(klass),
+        report = Report(_absolute(template_path), mimetype, data_factory(),
                         self.loader)
         reports.ids[report_name] = report, mimetype
         reports.mimetypes.setdefault(mimetype, []) \
