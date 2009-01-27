@@ -1,10 +1,14 @@
-from cStringIO import StringIO
-from common import Invoice, repos, inv
+from os.path import abspath
+from relatorio import Report
 
-repos.add_report(Invoice, 'application/pdf', 'basic.tex',
-                 report_name='ConTeXt')
+# test data
+from common import inv
+
 #PDF
 if __name__ == '__main__':
-    pdf_report, _ = repos.classes[Invoice].ids['ConTeXt']
-    file('bonham_basic.pdf', 'wb').write(pdf_report(o=inv).render().getvalue())
+    print "generating output_basic.pdf... ",
+    report = Report(abspath('basic.tex'), 'application/pdf')
+    content = report(o=inv).render().getvalue()
+    file('output_basic.pdf', 'wb').write(content)
+    print "done"
 

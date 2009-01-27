@@ -1,5 +1,3 @@
-import relatorio
-
 class Invoice(dict):
 
     @property
@@ -11,7 +9,6 @@ class Invoice(dict):
         return self.total * 0.21
 
 
-repos = relatorio.ReportRepository()
 inv = Invoice(customer={'name': 'John Bonham',
                         'address': {'street': 'Smirnov street',
                                     'zip': 1000,
@@ -40,6 +37,4 @@ inv = Invoice(customer={'name': 'John Bonham',
               id='MZY-20080703',
               status='late',
               bottle=(file('bouteille.png', 'r'), 'image/png'))
-
-
 
