@@ -45,6 +45,12 @@ if __name__ == '__main__':
     file('output_pivot.ods', 'wb').write(content)
     print "done"
 
+    print "generating output_sheets.ods... ",
+    report = Report(abspath('demo_sheets.ods'), ODS_MIME)
+    content = report(lst=lst).render().getvalue()
+    file('output_sheets.ods', 'wb').write(content)
+    print "done"
+
     # ODP
     print "generating output_presentation.odp... ",
     report = Report(abspath('presentation.odp'), ODP_MIME)
