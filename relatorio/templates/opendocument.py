@@ -325,9 +325,13 @@ class Template(MarkupTemplate):
                                                       outermost_c_ancestor)
 
                 # - we create a <py:xxx> node
+                if attr is not None:
+                    attribs = {attr: a_val}
+                else:
+                    attribs = {}
                 genshi_node = EtreeElement('{%s}%s' % (py_namespace,
                                                        directive),
-                                           attrib={attr: a_val},
+                                           attrib=attribs,
                                            nsmap=self.namespaces)
 
                 # - we move all the nodes between the opening and closing
