@@ -325,10 +325,7 @@ class Template(MarkupTemplate):
                                                       outermost_c_ancestor)
 
                 # - we create a <py:xxx> node
-                if attr is not None:
-                    attribs = {attr: a_val}
-                else:
-                    attribs = {}
+                attribs = {attr: a_val} if attr is not None else {}
                 genshi_node = EtreeElement('{%s}%s' % (py_namespace,
                                                        directive),
                                            attrib=attribs,
