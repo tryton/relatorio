@@ -126,6 +126,13 @@ def wrap_nodes_between(first, last, new_parent):
     removed in the process.
     """
     old_parent = first.getparent()
+
+    # Any text after the opening tag (and not within a tag) need to be handled
+    # explicitly. For example in <if>xxx<span>yyy</span>zzz</if>, zzz is
+    # copied along the span tag, but not xxx, which corresponds to the tail
+    # attribute of the opening tag.
+    if first.tail:
+        new_parent.text = first.tail
     for node in first.itersiblings():
         if node is last:
             break
