@@ -66,8 +66,28 @@ EXTENSIONS = {'image/png': 'png',
              }
 
 RELATORIO_URI = 'http://relatorio.openhex.org/'
+GENSHI_URI = 'http://genshi.edgewall.org/'
 output_encode = genshi.output.encode
 EtreeElement = lxml.etree.Element
+
+# A note regarding OpenDocument namespaces:
+#
+# The current code assumes the original OpenOffice document uses default
+# namespace prefix ("table", "xlink", "draw", ...). We derive the actual
+# namespaces URIs from their prefix, instead of the other way round. This has
+# the advantage that if a new version of the format use different namespaces
+# (this is not the case for ODF 1.1 but could be the case in the future since
+# there is a version number in those namespaces after all), Relatorio will
+# support those new formats out of the box.
+
+
+# A note about attribute namespaces:
+#
+# Ideally, we should update the namespace map of all the nodes we add
+# (Genshi) attributes to, so that the attributes use a nice "py" prefix instead
+# of a generated one (eg. "ns0", which is correct but ugly) in the case no
+# parent node defines it. Unfortunately, lxml doesn't support this:
+# the nsmap attribute of Element objects is (currently) readonly.
 
 def guess_type(val):
     if isinstance(val, (str, unicode)):
@@ -194,8 +214,23 @@ class Template(MarkupTemplate):
         """
         tree = lxml.etree.parse(StringIO(content))
         root = tree.getroot()
-        self.namespaces = root.nsmap.copy()
-        self.namespaces['py'] = 'http://genshi.edgewall.org/'
+
+        # assign default/fake namespaces so that documents do not need to
+        # define them if they don't use them
+        self.namespaces = {
+            "text": "urn:text",
+            "draw": "urn:draw",
+            "table": "urn:table",
+            "office": "urn:office",
+            "xlink": "urn:xlink"
+        }
+        # but override them with the real namespaces
+        self.namespaces.update(root.nsmap)
+
+        # remove any "root" namespace as lxml.xpath do not support them
+        self.namespaces.pop(None, None)
+
+        self.namespaces['py'] = GENSHI_URI
         self.namespaces['relatorio'] = RELATORIO_URI
 
         self._invert_style(tree)
@@ -286,9 +321,8 @@ class Template(MarkupTemplate):
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
 
-        py_namespace = self.namespaces['py']
-        py_attrs_attr = '{%s}attrs' % py_namespace
-        py_replace = '{%s}replace' % py_namespace
+        py_attrs_attr = '{%s}attrs' % GENSHI_URI
+        py_replace = '{%s}replace' % GENSHI_URI
 
         r_statements, closing_tags = self._relatorio_statements(tree)
 
@@ -336,10 +370,10 @@ class Template(MarkupTemplate):
                     attribs = {attr: a_val}
                 else:
                     attribs = {}
-                genshi_node = EtreeElement('{%s}%s' % (py_namespace,
+                genshi_node = EtreeElement('{%s}%s' % (GENSHI_URI,
                                                        directive),
                                            attrib=attribs,
-                                           nsmap=self.namespaces)
+                                           nsmap={'py': GENSHI_URI})
 
                 # - we move all the nodes between the opening and closing
                 #   statements to this new node (append also removes from old
@@ -373,10 +407,8 @@ class Template(MarkupTemplate):
         table_col_tag = '{%s}table-column' % table_namespace
         table_num_col_attr = '{%s}number-columns-repeated' % table_namespace
 
-        py_namespace = self.namespaces['py']
-        py_attrs_attr = '{%s}attrs' % py_namespace
-
-        repeat_tag = '{%s}repeat' % self.namespaces['relatorio']
+        py_attrs_attr = '{%s}attrs' % GENSHI_URI
+        repeat_tag = '{%s}repeat' % RELATORIO_URI
 
         # table node (it is not necessarily the direct parent of ancestor)
         table_node = ancestor.iterancestors('{%s}table' % table_namespace) \
@@ -406,9 +438,9 @@ class Template(MarkupTemplate):
         #    last child of the row
         attr_value = "__relatorio_store_col_count(%d, %r)" \
                      % (loop_id, table_name)
-        replace_node = EtreeElement('{%s}replace' % py_namespace,
+        replace_node = EtreeElement('{%s}replace' % GENSHI_URI,
                                     attrib={'value': attr_value},
-                                    nsmap=self.namespaces)
+                                    nsmap={'py': GENSHI_URI})
         ancestor.append(replace_node)
 
         # find the position in the row of the cells holding the
@@ -478,7 +510,7 @@ class Template(MarkupTemplate):
                "table": table_name
             }
             repeat_node = EtreeElement(repeat_tag, attrib=attribs,
-                                       nsmap=self.namespaces)
+                                       nsmap={'relatorio': RELATORIO_URI})
             wrap_nodes_between(first, last, repeat_node)
         return a_val
 
@@ -489,16 +521,14 @@ class Template(MarkupTemplate):
         original iterable as to not exhaust generators."""
 
         _, directive, attr, a_val = statement
-        table_rowspan_attr = '{%s}number-rows-spanned' \
-                             % self.namespaces['table']
+        table_namespace = self.namespaces['table']
+        table_rowspan_attr = '{%s}number-rows-spanned' % table_namespace
 
         # checks wether there is a (meaningful) rowspan
         rows_spanned = int(outer_o_node.attrib.get(table_rowspan_attr, 1))
         if rows_spanned == 1:
             return a_val
 
-        py_namespace = self.namespaces['py']
-        table_namespace = self.namespaces['table']
         table_row_tag = '{%s}table-row' % table_namespace
         table_cov_cell_tag = '{%s}covered-table-cell' % table_namespace
 
@@ -509,9 +539,9 @@ class Template(MarkupTemplate):
         # a_val == "target in iterable"
         target, iterable = a_val.split(' in ', 1)
         vars = "%s = list(%s)" % (temp_var, iterable.strip())
-        with_node = EtreeElement('{%s}with' % py_namespace,
+        with_node = EtreeElement('{%s}with' % GENSHI_URI,
                                  attrib={"vars": vars},
-                                 nsmap=self.namespaces)
+                                 nsmap={'py': GENSHI_URI})
 
         # 2) transform a_val to use that temporary variable
         a_val = "%s in %s" % (target, temp_var)
@@ -534,10 +564,10 @@ class Template(MarkupTemplate):
             assert first.tag == table_cov_cell_tag
             assert last.tag == table_cov_cell_tag
             # wrap them
-            tag = '{%s}%s' % (py_namespace, directive)
+            tag = '{%s}%s' % (GENSHI_URI, directive)
             for_node = EtreeElement(tag,
                                     attrib={attr: a_val},
-                                    nsmap=self.namespaces)
+                                    nsmap={'py': GENSHI_URI})
             wrap_nodes_between(first, last, for_node)
 
         # 4) wrap all the corresponding rows indide the "with"
@@ -548,8 +578,9 @@ class Template(MarkupTemplate):
 
     def _handle_images(self, tree):
         "replaces all draw:frame named 'image: ...' by draw:image nodes"
-        draw_name = '{%s}name' % self.namespaces['draw']
-        draw_image = '{%s}image' % self.namespaces['draw']
+        draw_namespace = self.namespaces['draw']
+        draw_name = '{%s}name' % draw_namespace
+        draw_image = '{%s}image' % draw_namespace
         py_attrs = '{%s}attrs' % self.namespaces['py']
         xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
@@ -557,7 +588,8 @@ class Template(MarkupTemplate):
             attr_expr = "__relatorio_make_href(%s)" % d_name[7:]
             image_node = EtreeElement(draw_image,
                                       attrib={py_attrs: attr_expr},
-                                      nsmap=self.namespaces)
+                                      nsmap={'draw': draw_namespace,
+                                             'py': GENSHI_URI})
             draw.replace(draw[0], image_node)
 
     def _handle_innerdocs(self, tree):
@@ -581,6 +613,9 @@ class Template(MarkupTemplate):
 
         stream = super(Template, self).generate(*args, **kwargs)
         if self.has_col_loop:
+            # Note that we can't simply add a "number-columns-repeated"
+            # attribute and then fill it with the correct number of columns
+            # because that wouldn't work if more than one column is repeated.
             transformation = DuplicateColumnHeaders(counter)
             col_filter = Transformer('//repeat[namespace-uri()="%s"]'
                                      % RELATORIO_URI)
