@@ -1,3 +1,11 @@
+0.5.1 - 20090416
+ * Simplified the examples
+ * Fix usage of tags without attributes (choose & otherwise)
+ * Print original traceback when a module can not be loaded
+ * Do not import relatorio in setup.py
+ * Better handling of namespaces
+ * Added some tests
+
 0.5.0 - 20090123
  * Added Text and XML Template to the TemplateLoader
  * Splitted mimetypes and ids in the ReportRepository
