@@ -1,6 +1,12 @@
 # -*- encoding: utf-8 -*-
-import relatorio
+import os
+import re
 from setuptools import setup, find_packages
+
+def get_version():
+    init = open(os.path.join(os.path.dirname(__file__), 'relatorio',
+                             '__init__.py')).read()
+    return re.search(r"""__version__ = '([0-9.]*)'""", init).group(1)
 
 setup(
     name="relatorio",
@@ -10,7 +16,7 @@ setup(
     description="A templating library able to output odt and pdf files",
     long_description=relatorio.__doc__,
     license="GPL License",
-    version=relatorio.__version__,
+    version=get_version(),
     packages=find_packages(exclude=['relatorio.tests', 'examples']),
     install_requires=[
         "Genshi >= 0.5",
