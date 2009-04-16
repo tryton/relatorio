@@ -14,7 +14,17 @@ setup(
     author="Nicolas Evrard",
     author_email="nicoe@openhex.org",
     description="A templating library able to output odt and pdf files",
-    long_description=relatorio.__doc__,
+    long_description="""
+relatorio
+=========
+
+A templating library which provides a way to easily output all kind of
+different files (odt, ods, png, svg, ...). Adding support for more filetype is
+easy: you just have to create a plugin for this.
+
+relatorio also provides a report repository allowing you to link python objects
+and report together, find reports by mimetypes/name/python objects.
+    """,
     license="GPL License",
     version=get_version(),
     packages=find_packages(exclude=['relatorio.tests', 'examples']),
