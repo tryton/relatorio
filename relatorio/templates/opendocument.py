@@ -21,7 +21,12 @@
 __metaclass__ = type
 
 import re
-import md5
+try:
+    # requires python 2.5+
+    from hashlib import md5
+except ImportError:
+    from md5 import md5
+
 import time
 import urllib
 import zipfile
@@ -114,7 +119,7 @@ class ImageHref:
             bitstream = bitstream.generate(**self.context).render()
         bitstream.seek(0)
         file_content = bitstream.read()
-        name = md5.new(file_content).hexdigest()
+        name = md5(file_content).hexdigest()
         path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
         if path not in self.zip.namelist():
             self.zip.writestr(path, file_content)
