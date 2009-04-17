@@ -29,7 +29,8 @@ for name in plugins:
     except Exception, e:
         warnings.warn("Unable to load plugin '%s', you will not be able "
                       "to use it" % name)
-        print 'Original traceback'
-        print '-' * 80
         print
+        print 'Original traceback:'
+        print '-------------------'
         traceback.print_exc()
+        print
