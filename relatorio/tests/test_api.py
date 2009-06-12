@@ -39,14 +39,16 @@ class TestRepository(object):
         "Testing the registration"
         reporting = ReportRepository()
         reporting.add_report(StubObject, 'text/plain',
-                             os.path.join('templates', 'test.tmpl'))
+                             os.path.join('templates', 'test.tmpl'),
+                             description='Test report')
 
         assert_true(StubObject in reporting.classes)
         assert_true('default' in reporting.classes[StubObject].ids)
         assert_true('text/plain' in reporting.classes[StubObject].mimetypes)
 
-        report, mime = reporting.classes[StubObject].ids['default']
+        report, mime, desc = reporting.classes[StubObject].ids['default']
         eq_(mime, 'text/plain')
+        eq_(desc, 'Test report')
         eq_(report.mimetype, 'text/plain')
         assert_true(report.fpath.endswith(os.path.join('templates',
                                                        'test.tmpl')))
