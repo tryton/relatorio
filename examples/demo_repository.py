@@ -16,7 +16,7 @@ repository.add_report(Invoice, 'image/png', 'pie_chart', report_name='pie')
 
 if __name__ == '__main__':
     # Add a chart to the invoice
-    inv['chart'] = repository.by_id(Invoice, 'pie')
+    inv['chart'] = repository.by_id(Invoice, 'pie')[:2]
 
     # Generate all reports on the invoice class
     for report_name, ext in (('basic', '.odt'),
@@ -25,7 +25,7 @@ if __name__ == '__main__':
                              ('presentation', '.odp')):
         filename = 'output_%s%s' % (report_name, ext)
         print "generating '%s'..." % filename,
-        report, mimetype = repository.by_id(Invoice, report_name)
+        report, mimetype, desc = repository.by_id(Invoice, report_name)
         data = report(o=inv).render().getvalue()
         file(filename, 'wb').write(data)
         print "done"
