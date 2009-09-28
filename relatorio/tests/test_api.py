@@ -112,3 +112,11 @@ class TestReport(object):
             "Hi Foo,\nIt's One o'clock to 5 !\n")
         assert_raises(TypeError, report, a)
 
+class TestReportInclude(object):
+
+    def test_include(self):
+        our_dir = os.path.dirname(__file__)
+        template_path = os.path.join(our_dir, 'templates')
+        relative_report = Report(os.path.join(template_path, 'include.tmpl'),
+                                 'text/plain')
+        eq_(relative_report().render(), 'Another Hello.\n\n')

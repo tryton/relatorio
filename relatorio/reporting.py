@@ -68,11 +68,15 @@ class MIMETemplateLoader(TemplateLoader):
             if codename is not None:
                 return codename
 
-    def load(self, path, mime):
+    def load(self, path, mime=None, relative_to=None, cls=None):
         "returns a template object based on path"
-        rtype = self.get_type(mime)
-        return super(MIMETemplateLoader, self).load(path,
-                                                    cls=self.factories[rtype])
+        assert mime is not None or cls is not None
+
+        if mime is not None:
+            cls = self.factories[self.get_type(mime)]
+
+        return super(MIMETemplateLoader, self).load(
+            path, cls=cls, relative_to=relative_to)
 
     @classmethod
     def add_factory(cls, abbr_mimetype, template_factory, id_function=None):
