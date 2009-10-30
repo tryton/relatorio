@@ -31,7 +31,7 @@ from genshi.filters import Translator
 from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
-from templates.opendocument import Template, GENSHI_EXPR, GENSHI_URI, \
+from relatorio.templates.opendocument import Template, GENSHI_EXPR, GENSHI_URI,\
                                    RELATORIO_URI
 
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
