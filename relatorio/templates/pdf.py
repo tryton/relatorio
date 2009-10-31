@@ -33,7 +33,7 @@ from genshi.template import NewTextTemplate
 from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import MIMETemplateLoader
 
-TEXEXEC_PATH = '/usr/bin/texexec'
+TEXEXEC = 'texexec'
 _encode = genshi.output.encode
 
 
@@ -57,7 +57,7 @@ class PDFSerializer:
         tex_file.write(_encode(self.text_serializer(stream)))
         tex_file.close()
 
-        subprocess.check_call([TEXEXEC_PATH, '--purge', 'report.tex'],
+        subprocess.check_call([TEXEXEC, '--purge', 'report.tex'],
                               cwd=self.working_dir)
 
         pdf = StringIO()
