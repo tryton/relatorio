@@ -1,5 +1,6 @@
 import relatorio
 from common import Invoice, inv
+from os.path import join, dirname
 
 ODT_MIME = 'application/vnd.oasis.opendocument.text'
 ODS_MIME = 'application/vnd.oasis.opendocument.spreadsheet'
@@ -27,5 +28,5 @@ if __name__ == '__main__':
         print "generating '%s'..." % filename,
         report, mimetype, desc = repository.by_id(Invoice, report_name)
         data = report(o=inv).render().getvalue()
-        file(filename, 'wb').write(data)
+        file(join(dirname(__file__), filename), 'wb').write(data)
         print "done"

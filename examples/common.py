@@ -1,3 +1,5 @@
+from os.path import join, dirname
+
 class Invoice(dict):
 
     @property
@@ -36,5 +38,6 @@ inv = Invoice(customer={'name': 'John Bonham',
                     ],
               id='MZY-20080703',
               status='late',
-              bottle=(file('bouteille.png', 'r'), 'image/png'))
+              bottle=(file(join(dirname(__file__), 'bouteille.png'), 'r'),
+                  'image/png'))
 
