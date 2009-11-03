@@ -1,5 +1,6 @@
 ###############################################################################
 #
+# Copyright (c) 2009 Cedric Krier.
 # Copyright (c) 2007, 2008 OpenHex SPRL. (http://openhex.com) All Rights
 # Reserved.
 #
@@ -112,7 +113,7 @@ class ImageHref:
         self.context = context.copy()
 
     def __call__(self, expr):
-        bitstream, mimetype = expr
+        bitstream, mimetype = expr[:2]
         if isinstance(bitstream, Report):
             bitstream = bitstream(**self.context).render()
         elif isinstance(bitstream, ChartTemplate):
@@ -124,6 +125,21 @@ class ImageHref:
         if path not in self.zip.namelist():
             self.zip.writestr(path, file_content)
         return {'{http://www.w3.org/1999/xlink}href': path}
+
+
+class ImageDimension:
+    "A class used to set dimension in draw tags"
+
+    def __init__(self, namespaces):
+        self.namespaces = namespaces
+
+    def __call__(self, expr, width, height):
+        # expr could be (bitstream, mimetype)
+        # or (bitstreamm mimetype, width, height)
+        if len(expr) == 4:
+            width, height = expr[2:]
+        return {'{%s}width' % self.namespaces['svg']: width,
+                '{%s}height' % self.namespaces['svg']: height}
 
 
 class ColumnCounter:
@@ -227,7 +243,8 @@ class Template(MarkupTemplate):
             "draw": "urn:draw",
             "table": "urn:table",
             "office": "urn:office",
-            "xlink": "urn:xlink"
+            "xlink": "urn:xlink",
+            "svg": "urn:svg",
         }
         # but override them with the real namespaces
         self.namespaces.update(root.nsmap)
@@ -587,15 +604,23 @@ class Template(MarkupTemplate):
         draw_name = '{%s}name' % draw_namespace
         draw_image = '{%s}image' % draw_namespace
         py_attrs = '{%s}attrs' % self.namespaces['py']
+        svg_namespace = self.namespaces['svg']
+        svg_width = '{%s}width' % svg_namespace
+        svg_height = '{%s}height' % svg_namespace
         xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
-            d_name = draw.attrib[draw_name]
-            attr_expr = "__relatorio_make_href(%s)" % d_name[7:]
+            d_name = draw.attrib[draw_name][6:].strip()
+            attr_expr = "__relatorio_make_href(%s)" % d_name
             image_node = EtreeElement(draw_image,
                                       attrib={py_attrs: attr_expr},
                                       nsmap={'draw': draw_namespace,
                                              'py': GENSHI_URI})
             draw.replace(draw[0], image_node)
+            width = draw.attrib.pop(svg_width, None)
+            height = draw.attrib.pop(svg_height, None)
+            attr_expr = "__relatorio_make_dimension(%s, '%s', '%s')" % \
+                    (d_name, width, height)
+            draw.attrib[py_attrs] = attr_expr
 
     def _handle_innerdocs(self, tree):
         "finds inner_docs and adds them to the processing stack."
@@ -609,6 +634,7 @@ class Template(MarkupTemplate):
         "creates the RelatorioStream."
         serializer = OOSerializer(self.filepath)
         kwargs['__relatorio_make_href'] = ImageHref(serializer.outzip, kwargs)
+        kwargs['__relatorio_make_dimension'] = ImageDimension(self.namespaces)
         kwargs['__relatorio_guess_type'] = guess_type
 
         counter = ColumnCounter()
