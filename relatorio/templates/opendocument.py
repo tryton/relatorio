@@ -98,7 +98,7 @@ EtreeElement = lxml.etree.Element
 def guess_type(val):
     if isinstance(val, (str, unicode)):
         return 'string'
-    elif isinstance(val, (int, float)):
+    elif isinstance(val, (int, float, long)):
         return 'float'
 
 class OOTemplateError(genshi.template.base.TemplateSyntaxError):

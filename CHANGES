@@ -1,4 +1,5 @@
 0.5.2
+ * Fix guess_type for long value
  * Add width, height arguments for "image:" in odf
  * Switch to GPL-3
  * Added support for Genshi {% include %} tags (patch by Simon Jagoe)
