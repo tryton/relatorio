@@ -9,3 +9,4 @@ examples/line.png
 examples/pie.png
 examples/vbar.svg
 dist/
+build/
