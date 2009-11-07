@@ -13,7 +13,7 @@ setup(
     url="http://relatorio.openhex.org/",
     author="Nicolas Evrard",
     author_email="nicoe@openhex.org",
-    maintainer="Cédric Krier",
+    maintainer=u"Cédric Krier",
     maintainer_email="cedric.krier@b2ck.com",
     description="A templating library able to output odt and pdf files",
     long_description="""
