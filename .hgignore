@@ -8,3 +8,4 @@ examples/hbar.svg
 examples/line.png
 examples/pie.png
 examples/vbar.svg
+dist/

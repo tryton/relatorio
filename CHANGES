@@ -1,4 +1,4 @@
-0.5.2
+0.5.2 - 20091108
  * Fix guess_type for long value
  * Add width, height arguments for "image:" in odf
  * Switch to GPL-3
