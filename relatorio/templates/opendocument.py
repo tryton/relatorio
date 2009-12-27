@@ -45,6 +45,7 @@ from genshi.template import MarkupTemplate
 from genshi.filters import Transformer
 from genshi.filters.transform import ENTER, EXIT
 from genshi.core import Stream
+from genshi.template.interpolation import PREFIX
 
 
 from relatorio.templates.base import RelatorioStream
@@ -259,6 +260,7 @@ class Template(MarkupTemplate):
         self._handle_relatorio_tags(tree)
         self._handle_images(tree)
         self._handle_innerdocs(tree)
+        self._escape_values(tree)
         return StringIO(lxml.etree.tostring(tree))
 
     def _invert_style(self, tree):
@@ -629,6 +631,16 @@ class Template(MarkupTemplate):
                      "and @xlink:show='embed']"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             self.inner_docs.append(draw.attrib[href_attrib][2:])
+
+    def _escape_values(self, tree):
+        "escapes element values"
+        for element in tree.iter():
+            for attrs in element.keys():
+                if not attrs.startswith('{%s}' % GENSHI_URI):
+                    element.attrib[attrs] = element.attrib[attrs]\
+                            .replace(PREFIX, PREFIX * 2)
+            if element.text:
+                element.text = element.text.replace(PREFIX, PREFIX * 2)
 
     def generate(self, *args, **kwargs):
         "creates the RelatorioStream."
