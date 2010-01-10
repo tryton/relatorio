@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 import os
 import re
 from setuptools import setup, find_packages
@@ -13,7 +12,7 @@ setup(
     url="http://relatorio.openhex.org/",
     author="Nicolas Evrard",
     author_email="nicoe@openhex.org",
-    maintainer=u"Cédric Krier",
+    maintainer=u"Cedric Krier",
     maintainer_email="cedric.krier@b2ck.com",
     description="A templating library able to output odt and pdf files",
     long_description="""
