@@ -185,6 +185,20 @@ def wrap_nodes_between(first, last, new_parent):
     old_parent.remove(last)
 
 
+def update_py_attrs(node, value):
+    """An helper function to update py_attrs of a node.
+    """
+    if not value:
+        return
+    py_attrs_attr = '{%s}attrs' % GENSHI_URI
+    if not py_attrs_attr in node.attrib:
+        node.attrib[py_attrs_attr] = value
+    else:
+        node.attrib[py_attrs_attr] = \
+                "(lambda x, y: x.update(y) or x)(%s or {}, %s or {})" % \
+                (node.attrib[py_attrs_attr], value)
+
+
 class Template(MarkupTemplate):
 
     def __init__(self, source, filepath=None, filename=None, loader=None,
@@ -416,8 +430,8 @@ class Template(MarkupTemplate):
                 # The grand-parent tag is a table cell we should set the
                 # correct value and type for this cell.
                 dico = "{'%s': %s, '%s': __relatorio_guess_type(%s)}"
-                parent.attrib[py_attrs_attr] = dico % (office_name, expr,
-                                                       office_valuetype, expr)
+                update_py_attrs(parent, dico %
+                        (office_name, expr, office_valuetype, expr))
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
 
@@ -447,16 +461,15 @@ class Template(MarkupTemplate):
         # Note that table_name is not needed in the first two
         # operations, but a unique id within the table is required
         # to support nested column repetition
-        ancestor.attrib[py_attrs_attr] = \
-            "__relatorio_reset_col_count(%d)" % loop_id
+        update_py_attrs(ancestor, "__relatorio_reset_col_count(%d)" % loop_id)
 
         # 2) add increment code (through a py:attrs attribute) on
         #    the first cell node after the opening (cell node)
         #    ancestor
         enclosed_cell = outer_o_node.getnext()
         assert enclosed_cell.tag == '{%s}table-cell' % table_namespace
-        enclosed_cell.attrib[py_attrs_attr] = \
-            "__relatorio_inc_col_count(%d)" % loop_id
+        update_py_attrs(enclosed_cell, "__relatorio_inc_col_count(%d)" %
+                loop_id)
 
         # 3) add "store count" code as a py:replace node, as the
         #    last child of the row
