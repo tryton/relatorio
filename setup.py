@@ -31,7 +31,7 @@ and report together, find reports by mimetypes/name/python objects.
     packages=find_packages(exclude=['relatorio.tests', 'examples']),
     install_requires=[
         "Genshi >= 0.5",
-        "lxml >= 1.3.6"
+        "lxml >= 2.0"
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
