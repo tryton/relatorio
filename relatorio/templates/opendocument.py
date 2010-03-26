@@ -74,6 +74,7 @@ EXTENSIONS = {'image/png': 'png',
 
 RELATORIO_URI = 'http://relatorio.openhex.org/'
 GENSHI_URI = 'http://genshi.edgewall.org/'
+MANIFEST = 'META-INF/manifest.xml'
 output_encode = genshi.output.encode
 EtreeElement = lxml.etree.Element
 
@@ -109,8 +110,9 @@ class OOTemplateError(genshi.template.base.TemplateSyntaxError):
 class ImageHref:
     "A class used to add images in the odf zipfile"
 
-    def __init__(self, zfile, context):
+    def __init__(self, zfile, manifest, context):
         self.zip = zfile
+        self.manifest = manifest
         self.context = context.copy()
 
     def __call__(self, expr):
@@ -125,6 +127,7 @@ class ImageHref:
         path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
         if path not in self.zip.namelist():
             self.zip.writestr(path, file_content)
+            self.manifest.add_file_entry(path, mimetype)
         return {'{http://www.w3.org/1999/xlink}href': path}
 
 
@@ -662,7 +665,9 @@ class Template(MarkupTemplate):
     def generate(self, *args, **kwargs):
         "creates the RelatorioStream."
         serializer = OOSerializer(self.filepath)
-        kwargs['__relatorio_make_href'] = ImageHref(serializer.outzip, kwargs)
+        kwargs['__relatorio_make_href'] = ImageHref(serializer.outzip,
+                                                    serializer.manifest,
+                                                    kwargs)
         kwargs['__relatorio_make_dimension'] = ImageDimension(self.namespaces)
         kwargs['__relatorio_guess_type'] = guess_type
 
@@ -712,10 +717,33 @@ class DuplicateColumnHeaders(object):
                 yield mark, (kind, data, pos)
 
 
+class Manifest(object):
+
+    def __init__(self, content):
+        self.tree = lxml.etree.parse(StringIO(content))
+        self.root = self.tree.getroot()
+        self.namespaces = self.root.nsmap
+
+    def __str__(self):
+        return lxml.etree.tostring(self.tree, encoding='UTF-8',
+                                   xml_declaration=True)
+
+    def add_file_entry(self, path, mimetype=None):
+        manifest_namespace = self.namespaces['manifest']
+        attribs = {'media-type': mimetype or '',
+                   'full-path': path}
+        entry_node = EtreeElement('{%s}%s' % (manifest_namespace,
+                                              'file-entry'),
+                                  attrib=attribs,
+                                  nsmap={'manifest': manifest_namespace})
+        self.root.append(entry_node)
+
+
 class OOSerializer:
 
     def __init__(self, oo_path):
         self.inzip = zipfile.ZipFile(oo_path)
+        self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.new_oo = StringIO()
         self.outzip = zipfile.ZipFile(self.new_oo, 'w')
         self.xml_serializer = genshi.output.XMLSerializer()
@@ -741,6 +769,8 @@ class OOSerializer:
                     setattr(new_info, attr, getattr(f_info, attr))
                 serialized_stream = output_encode(self.xml_serializer(stream))
                 self.outzip.writestr(new_info, serialized_stream)
+            elif f_info.filename == MANIFEST:
+                self.outzip.writestr(f_info, str(self.manifest))
             else:
                 self.outzip.writestr(f_info, self.inzip.read(f_info.filename))
         self.inzip.close()
