@@ -139,8 +139,12 @@ class ImageDimension:
         # or (bitstreamm mimetype, width, height)
         if len(expr) == 4:
             width, height = expr[2:]
-        return {'{%s}width' % self.namespaces['svg']: width,
-                '{%s}height' % self.namespaces['svg']: height}
+        attrs = {}
+        if width:
+            attrs['{%s}width' % self.namespaces['svg']] = width
+        if height:
+            attrs['{%s}height' % self.namespaces['svg']] = height
+        return attrs
 
 
 class ColumnCounter:
