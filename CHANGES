@@ -1,3 +1,5 @@
+ * Fix namespace in opendocument manifest
+
 0.5.4 - 20100330
  * Update manifest.xml with added files in opendocument
  * Do not write empty width or height attributes in opendocument

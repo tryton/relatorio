@@ -730,8 +730,8 @@ class Manifest(object):
 
     def add_file_entry(self, path, mimetype=None):
         manifest_namespace = self.namespaces['manifest']
-        attribs = {'media-type': mimetype or '',
-                   'full-path': path}
+        attribs = {'{%s}media-type' % manifest_namespace: mimetype or '',
+                   '{%s}full-path' % manifest_namespace: path}
         entry_node = EtreeElement('{%s}%s' % (manifest_namespace,
                                               'file-entry'),
                                   attrib=attribs,
