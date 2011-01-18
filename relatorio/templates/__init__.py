@@ -20,7 +20,10 @@
 
 import traceback
 import warnings
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 plugins = ['base', 'opendocument', 'pdf', 'chart']
 

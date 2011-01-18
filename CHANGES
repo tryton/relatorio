@@ -1,3 +1,5 @@
+ * Use StringIO as failback of cStringIO
+
 0.5.5 - 20100719
  * Fix namespace in opendocument manifest
 

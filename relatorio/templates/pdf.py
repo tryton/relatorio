@@ -24,7 +24,10 @@ import os
 import shutil
 import tempfile
 import subprocess
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import genshi
 import genshi.output

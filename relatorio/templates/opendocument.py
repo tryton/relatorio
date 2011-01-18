@@ -31,7 +31,10 @@ except ImportError:
 import time
 import urllib
 import zipfile
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 from copy import deepcopy
 
 

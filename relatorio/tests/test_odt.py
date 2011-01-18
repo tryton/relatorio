@@ -22,7 +22,10 @@
 
 import os
 import re
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import lxml.etree
 from nose.tools import *

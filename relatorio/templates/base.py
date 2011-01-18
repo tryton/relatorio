@@ -20,7 +20,10 @@
 
 __metaclass__ = type
 
-from cStringIO import OutputType
+try:
+    from cStringIO import OutputType
+except ImportError:
+    from StringIO import StringIO as OutputType
 
 import genshi.core
 from genshi.template import NewTextTemplate, MarkupTemplate
