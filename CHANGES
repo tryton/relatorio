@@ -1,3 +1,4 @@
+ * Clean template code from draw:frame in opendocument
  * Use StringIO as failback of cStringIO
 
 0.5.5 - 20100719

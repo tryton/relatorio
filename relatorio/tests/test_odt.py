@@ -272,10 +272,8 @@ class TestOOTemplating(object):
         root = tree.getroot()
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
         eq_(len(images), 3)
-        eq_(images[0].get('{%s}name' % self.oot.namespaces['draw']),
-            "image: (oeuf, 'image/png')")
-        eq_(images[1].get('{%s}name' % self.oot.namespaces['draw']),
-            'image: img')
+        eq_(images[0].get('{%s}name' % self.oot.namespaces['draw']), "")
+        eq_(images[1].get('{%s}name' % self.oot.namespaces['draw']), '')
         eq_(images[1].get('{%s}width' % self.oot.namespaces['svg']),
             '1.732cm')
         eq_(images[1].get('{%s}height' % self.oot.namespaces['svg']),

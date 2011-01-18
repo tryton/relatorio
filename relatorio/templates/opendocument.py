@@ -635,6 +635,7 @@ class Template(MarkupTemplate):
         xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             d_name = draw.attrib[draw_name][6:].strip()
+            draw.attrib[draw_name] = '' # clean template code
             attr_expr = "__relatorio_make_href(%s)" % d_name
             image_node = EtreeElement(draw_image,
                                       attrib={py_attrs: attr_expr},
