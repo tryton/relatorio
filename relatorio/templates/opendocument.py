@@ -36,6 +36,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 from copy import deepcopy
+import datetime
 
 
 import warnings
@@ -50,7 +51,8 @@ from genshi.filters.transform import ENTER, EXIT
 from genshi.core import Stream
 from genshi.template.interpolation import PREFIX
 
-
+#from relatorio import __version__ as VERSION
+import relatorio
 from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import Report, MIMETemplateLoader
 try:
@@ -78,6 +80,8 @@ EXTENSIONS = {'image/png': 'png',
 RELATORIO_URI = 'http://relatorio.openhex.org/'
 GENSHI_URI = 'http://genshi.edgewall.org/'
 MANIFEST = 'META-INF/manifest.xml'
+META = 'meta.xml'
+THUMBNAILS = 'Thumbnails'
 output_encode = genshi.output.encode
 EtreeElement = lxml.etree.Element
 
@@ -743,12 +747,62 @@ class Manifest(object):
                                   nsmap={'manifest': manifest_namespace})
         self.root.append(entry_node)
 
+    def remove_file_entry(self, path):
+        manifest_namespace = self.namespaces['manifest']
+        entry = self.root.find('{%s}%s[@{%s}full-path="%s"]' %
+                               (manifest_namespace, 'file-entry',
+                                manifest_namespace, path))
+        if entry is not None:
+            self.root.remove(entry)
+
+
+class Meta(object):
+
+    def __init__(self, content):
+        self.tree = lxml.etree.parse(StringIO(content))
+        root = self.tree.getroot()
+        self.namespaces = root.nsmap
+        self.office_meta, = self.tree.xpath('/office:document-meta/office:meta',
+                                            namespaces=self.namespaces)
+
+    def set(self, name, value, namespace='meta'):
+        namespace = self.namespaces[namespace]
+        meta = self.office_meta.find('{%s}%s' % (namespace, name))
+        if meta is None:
+            meta = EtreeElement('{%s}%s' % (namespace, name),
+                                            nsmap={'meta': namespace})
+            self.office_meta.append(meta)
+        meta.text = value
+
+    def remove(self, name, namespace='meta'):
+        namespace = self.namespaces[namespace]
+        meta = self.office_meta.find('{%s}%s' % (namespace, name))
+        if meta is not None:
+            self.office_meta.remove(meta)
+
+    def __str__(self):
+        now = datetime.datetime.now()
+        self.set('creation-date', now.isoformat())
+        self.set('date', now.isoformat())
+        self.remove('document-statistic')
+        self.set('editing-cycles', '1')
+        self.remove('editing-duration')
+        self.set('generator', 'relatorio/%s' % relatorio.__version__)
+        self.remove('initial-creator')
+        self.remove('print-date')
+        self.remove('printed-by')
+        self.remove('creator', 'dc')
+        self.remove('date', 'dc')
+        return lxml.etree.tostring(self.tree, encoding='UTF-8',
+                                   xml_declaration=True)
+
 
 class OOSerializer:
 
     def __init__(self, oo_path):
         self.inzip = zipfile.ZipFile(oo_path)
         self.manifest = Manifest(self.inzip.read(MANIFEST))
+        self.meta = Meta(self.inzip.read(META))
         self.new_oo = StringIO()
         self.outzip = zipfile.ZipFile(self.new_oo, 'w')
         self.xml_serializer = genshi.output.XMLSerializer()
@@ -762,6 +816,7 @@ class OOSerializer:
             files.setdefault(stream_for, []).append((kind, data, pos))
 
         now = time.localtime()[:6]
+        manifest_info = None
         for f_info in self.inzip.infolist():
             if f_info.filename.startswith('ObjectReplacements'):
                 continue
@@ -775,9 +830,16 @@ class OOSerializer:
                 serialized_stream = output_encode(self.xml_serializer(stream))
                 self.outzip.writestr(new_info, serialized_stream)
             elif f_info.filename == MANIFEST:
-                self.outzip.writestr(f_info, str(self.manifest))
+                manifest_info = f_info
+            elif f_info.filename == META:
+                self.outzip.writestr(f_info, str(self.meta))
+            elif f_info.filename.startswith(THUMBNAILS + '/'):
+                self.manifest.remove_file_entry(f_info.filename)
             else:
                 self.outzip.writestr(f_info, self.inzip.read(f_info.filename))
+        self.manifest.remove_file_entry(THUMBNAILS + '/')
+        if manifest_info:
+            self.outzip.writestr(f_info, str(self.manifest))
         self.inzip.close()
         self.outzip.close()
 
