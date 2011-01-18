@@ -223,12 +223,14 @@ class TestOOTemplating(object):
                     <text:p text:style-name="other">yyy</text:p>
                     zzz
                     <text:a xlink:href="relatorio:///if">/if</text:a>
+                    aaa
                  </xml>'''
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         child = root_interpolated[0]
         eq_(child.tag, '{http://genshi.edgewall.org/}if')
         eq_(child.text.strip(), 'xxx')
+        eq_(child.tail.strip(), 'aaa')
 
     def test_styles(self):
         "Testing that styles get rendered"

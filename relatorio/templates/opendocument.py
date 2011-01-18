@@ -192,6 +192,7 @@ def wrap_nodes_between(first, last, new_parent):
         # remove it from its previous parent
         new_parent.append(node)
     old_parent.replace(first, new_parent)
+    new_parent.tail = last.tail
     old_parent.remove(last)
 
 
