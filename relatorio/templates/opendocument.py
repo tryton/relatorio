@@ -647,8 +647,8 @@ class Template(MarkupTemplate):
                                       nsmap={'draw': draw_namespace,
                                              'py': GENSHI_URI})
             draw.replace(draw[0], image_node)
-            width = draw.attrib.pop(svg_width, None)
-            height = draw.attrib.pop(svg_height, None)
+            width = draw.attrib.pop(svg_width, '')
+            height = draw.attrib.pop(svg_height, '')
             attr_expr = "__relatorio_make_dimension(%s, '%s', '%s')" % \
                     (d_name, width, height)
             draw.attrib[py_attrs] = attr_expr
