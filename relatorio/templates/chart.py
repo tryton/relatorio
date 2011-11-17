@@ -10,7 +10,7 @@
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU General Public License along with
@@ -81,11 +81,11 @@ class CairoSerializer:
                                        chart_yaml['options']['height'])
         else:
             raise NotImplementedError
-        
+
         chart = PYCHA_TYPE[chart_info['type']](surface, chart_yaml['options'])
         chart.addDataset(chart_info['dataset'])
         chart.render()
-        
+
         if chart_type == 'png':
             surface.write_to_png(result)
         elif chart_type == 'svg':

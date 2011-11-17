@@ -53,7 +53,8 @@ class TestRepository(object):
         assert_true(report.fpath.endswith(os.path.join('templates',
                                                        'test.tmpl')))
 
-        report2, name = reporting.classes[StubObject].mimetypes['text/plain'][0]
+        report2, name = (reporting.classes[StubObject]
+                         .mimetypes['text/plain'][0])
         eq_(name, 'default')
         eq_(report, report2)
 
@@ -98,7 +99,7 @@ class TestReport(object):
                 d['o'] = o
                 d['y'] = y
                 d['time'] = time
-                d['func'] = lambda x: x+1
+                d['func'] = lambda x: x + 1
                 return d
 
         our_dir, _ = os.path.split(__file__)
@@ -111,6 +112,7 @@ class TestReport(object):
         eq_(report(o=a, time="One o'clock", y=4).render(),
             "Hi Foo,\nIt's One o'clock to 5 !\n")
         assert_raises(TypeError, report, a)
+
 
 class TestReportInclude(object):
 

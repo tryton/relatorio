@@ -20,10 +20,11 @@
 
 __metaclass__ = type
 
-import os, sys
+import os
+import sys
 
-import pkg_resources
 from genshi.template import TemplateLoader
+
 
 def _absolute(path):
     "Compute the absolute path of path relative to the caller file"
@@ -32,6 +33,7 @@ def _absolute(path):
     caller_fname = sys._getframe(2).f_globals['__file__']
     caller_dir = os.path.dirname(caller_fname)
     return os.path.abspath(os.path.join(caller_dir, path))
+
 
 def _guess_type(mime):
     """
@@ -122,7 +124,6 @@ class Report:
 
     def __repr__(self):
         return '<relatorio report on %s>' % self.fpath
-
 
 
 class ReportDict:

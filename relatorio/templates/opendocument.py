@@ -110,6 +110,7 @@ def guess_type(val):
     elif isinstance(val, (int, float, long)):
         return 'float'
 
+
 class OOTemplateError(genshi.template.base.TemplateSyntaxError):
     "Error to raise when there is a SyntaxError in the genshi template"
 
@@ -374,7 +375,6 @@ class Template(MarkupTemplate):
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
 
-        py_attrs_attr = '{%s}attrs' % GENSHI_URI
         py_replace = '{%s}replace' % GENSHI_URI
 
         r_statements, closing_tags = self._relatorio_statements(tree)
@@ -460,7 +460,6 @@ class Template(MarkupTemplate):
         table_col_tag = '{%s}table-column' % table_namespace
         table_num_col_attr = '{%s}number-columns-repeated' % table_namespace
 
-        py_attrs_attr = '{%s}attrs' % GENSHI_URI
         repeat_tag = '{%s}repeat' % RELATORIO_URI
 
         # table node (it is not necessarily the direct parent of ancestor)
@@ -543,11 +542,7 @@ class Template(MarkupTemplate):
                 tag_pos = table_node.index(tag)
                 num = int(tag.attrib.pop(table_num_col_attr))
                 new_tags = [deepcopy(tag) for _ in range(num)]
-                table_node[tag_pos:tag_pos+1] = new_tags
-
-            # recompute the list of column headers as it could
-            # have changed.
-            coldefs = list(table_node.iterchildren(table_col_tag))
+                table_node[tag_pos:tag_pos + 1] = new_tags
 
             # compute the column header nodes corresponding to
             # the opening and closing tags.
@@ -607,7 +602,7 @@ class Template(MarkupTemplate):
         rows_to_wrap = [row_node]
         assert row_node.tag == table_row_tag
         next_rows = row_node.itersiblings(table_row_tag)
-        for row_idx in range(rows_spanned-1):
+        for row_idx in range(rows_spanned - 1):
             next_row_node = next_rows.next()
             rows_to_wrap.append(next_row_node)
             # compute the start and end nodes
@@ -640,7 +635,7 @@ class Template(MarkupTemplate):
         xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             d_name = draw.attrib[draw_name][6:].strip()
-            draw.attrib[draw_name] = '' # clean template code
+            draw.attrib[draw_name] = ''  # clean template code
             attr_expr = "__relatorio_make_href(%s)" % d_name
             image_node = EtreeElement(draw_image,
                                       attrib={py_attrs: attr_expr},
@@ -762,8 +757,8 @@ class Meta(object):
         self.tree = lxml.etree.parse(StringIO(content))
         root = self.tree.getroot()
         self.namespaces = root.nsmap
-        self.office_meta, = self.tree.xpath('/office:document-meta/office:meta',
-                                            namespaces=self.namespaces)
+        path = '/office:document-meta/office:meta'
+        self.office_meta, = self.tree.xpath(path, namespaces=self.namespaces)
 
     def set(self, name, value, namespace='meta'):
         namespace = self.namespaces[namespace]

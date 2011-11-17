@@ -21,7 +21,6 @@
 
 
 import os
-import re
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -29,15 +28,15 @@ except ImportError:
 
 import lxml.etree
 from nose.tools import *
-import genshi
 from genshi.filters import Translator
 from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
-from relatorio.templates.opendocument import Template, GENSHI_EXPR, GENSHI_URI,\
-                                   RELATORIO_URI
+from relatorio.templates.opendocument import Template, GENSHI_EXPR,\
+    GENSHI_URI, RELATORIO_URI
 
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+
 
 def pseudo_gettext(string):
     catalog = {'Mes collègues sont:': 'My colleagues are:',
