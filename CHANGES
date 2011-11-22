@@ -1,3 +1,4 @@
+ * Fix typo when writing manifest
  * Remove Thumbnails in opendocument
  * Clean meta in opendocument
  * Clean template code from draw:frame in opendocument

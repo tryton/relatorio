@@ -834,7 +834,7 @@ class OOSerializer:
                 self.outzip.writestr(f_info, self.inzip.read(f_info.filename))
         self.manifest.remove_file_entry(THUMBNAILS + '/')
         if manifest_info:
-            self.outzip.writestr(f_info, str(self.manifest))
+            self.outzip.writestr(manifest_info, str(self.manifest))
         self.inzip.close()
         self.outzip.close()
 
