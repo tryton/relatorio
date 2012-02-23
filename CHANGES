@@ -1,3 +1,4 @@
+ * Add expression cache to prevent multiple evaluation of the same expression
  * Fix typo when writing manifest
  * Remove Thumbnails in opendocument
  * Clean meta in opendocument

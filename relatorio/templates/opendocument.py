@@ -177,6 +177,19 @@ class ColumnCounter:
                                         self.counters.get(table_name, 0))
 
 
+class ExpressionCache:
+    """A class used to cache result of expression evaluation"""
+    def __init__(self):
+        self.cache = {}
+
+    def store(self, expression_id, expression):
+        self.cache[expression_id] = expression
+        return expression
+
+    def get(self, expression_id):
+        return self.cache[expression_id]
+
+
 def wrap_nodes_between(first, last, new_parent):
     """An helper function to move all nodes between two nodes to a new node
     and add that new node to their former parent. The boundary nodes are
@@ -437,16 +450,22 @@ class Template(MarkupTemplate):
                                    genshi_node)
             else:
                 # It's not a genshi statement it's a python expression
-                r_node.attrib[py_replace] = expr
                 parent = r_node.getparent().getparent()
                 if parent is None or parent.tag != table_cell_tag:
+                    r_node.attrib[py_replace] = expr
                     continue
 
+                cache_id = id(r_node)
+                r_node.attrib[py_replace] = ("__relatorio_get_cache(%s)" %
+                                             cache_id)
                 # The grand-parent tag is a table cell we should set the
                 # correct value and type for this cell.
-                dico = "{'%s': %s, '%s': __relatorio_guess_type(%s)}"
+                dico = ("{'%s': __relatorio_store_cache(%s, %s), "
+                        "'%s': __relatorio_guess_type("
+                        "__relatorio_get_cache(%s))}")
                 update_py_attrs(parent, dico %
-                        (office_name, expr, office_valuetype, expr))
+                        (office_name, cache_id, expr, office_valuetype,
+                         cache_id))
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
 
@@ -634,9 +653,11 @@ class Template(MarkupTemplate):
         svg_height = '{%s}height' % svg_namespace
         xpath_expr = "//draw:frame[starts-with(@draw:name, 'image:')]"
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
+            cache_id = id(draw)
             d_name = draw.attrib[draw_name][6:].strip()
             draw.attrib[draw_name] = ''  # clean template code
-            attr_expr = "__relatorio_make_href(%s)" % d_name
+            attr_expr = ("__relatorio_make_href(__relatorio_get_cache(%s))" %
+                         cache_id)
             image_node = EtreeElement(draw_image,
                                       attrib={py_attrs: attr_expr},
                                       nsmap={'draw': draw_namespace,
@@ -644,8 +665,9 @@ class Template(MarkupTemplate):
             draw.replace(draw[0], image_node)
             width = draw.attrib.pop(svg_width, '')
             height = draw.attrib.pop(svg_height, '')
-            attr_expr = "__relatorio_make_dimension(%s, '%s', '%s')" % \
-                    (d_name, width, height)
+            attr_expr = ("__relatorio_make_dimension("
+                         "__relatorio_store_cache(%s, %s), '%s', '%s')" %
+                         (cache_id, d_name, width, height))
             draw.attrib[py_attrs] = attr_expr
 
     def _handle_innerdocs(self, tree):
@@ -679,6 +701,10 @@ class Template(MarkupTemplate):
         kwargs['__relatorio_reset_col_count'] = counter.reset
         kwargs['__relatorio_inc_col_count'] = counter.inc
         kwargs['__relatorio_store_col_count'] = counter.store
+
+        cache = ExpressionCache()
+        kwargs['__relatorio_store_cache'] = cache.store
+        kwargs['__relatorio_get_cache'] = cache.get
 
         stream = super(Template, self).generate(*args, **kwargs)
         if self.has_col_loop:
