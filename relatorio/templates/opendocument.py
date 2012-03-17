@@ -129,6 +129,8 @@ class ImageHref:
             bitstream = bitstream(**self.context).render()
         elif isinstance(bitstream, ChartTemplate):
             bitstream = bitstream.generate(**self.context).render()
+        elif not hasattr(bitstream, 'seek') or not hasattr(bitstream, 'read'):
+            bitstream = StringIO(bitstream)
         bitstream.seek(0)
         file_content = bitstream.read()
         name = md5(file_content).hexdigest()
