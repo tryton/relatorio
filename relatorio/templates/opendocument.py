@@ -37,6 +37,7 @@ except ImportError:
     from StringIO import StringIO
 from copy import deepcopy
 import datetime
+from decimal import Decimal
 
 
 import warnings
@@ -107,7 +108,7 @@ EtreeElement = lxml.etree.Element
 def guess_type(val):
     if isinstance(val, (str, unicode)):
         return 'string'
-    elif isinstance(val, (int, float, long)):
+    elif isinstance(val, (int, float, long, Decimal)):
         return 'float'
 
 
