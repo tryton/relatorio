@@ -52,7 +52,6 @@ from genshi.filters.transform import ENTER, EXIT
 from genshi.core import Stream
 from genshi.template.interpolation import PREFIX
 
-#from relatorio import __version__ as VERSION
 import relatorio
 from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import Report, MIMETemplateLoader
