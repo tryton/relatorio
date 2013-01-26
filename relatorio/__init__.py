@@ -12,4 +12,4 @@ and report together, find reports by mimetypes/name/python objects.
 from relatorio.reporting import MIMETemplateLoader, ReportRepository, Report
 import templates
 
-__version__ = '0.5.7'
+__version__ = '0.5.8'
