@@ -43,4 +43,7 @@ and report together, find reports by mimetypes/name/python objects.
         "Topic :: Text Processing",
     ],
     test_suite="nose.collector",
+    tests_require=[
+        "nose",
+    ],
     )
