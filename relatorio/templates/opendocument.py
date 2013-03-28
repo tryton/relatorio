@@ -850,7 +850,8 @@ class OOSerializer:
                 new_info = zipfile.ZipInfo(f_info.filename, now)
                 for attr in ('compress_type', 'flag_bits', 'create_system'):
                     setattr(new_info, attr, getattr(f_info, attr))
-                serialized_stream = output_encode(self.xml_serializer(stream))
+                serialized_stream = output_encode(self.xml_serializer(stream),
+                    encoding='utf-8')
                 self.outzip.writestr(new_info, serialized_stream)
             elif f_info.filename == MANIFEST:
                 manifest_info = f_info

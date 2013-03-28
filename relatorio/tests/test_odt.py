@@ -234,18 +234,19 @@ class TestOOTemplating(object):
     def test_styles(self):
         "Testing that styles get rendered"
         stream = self.oot.generate(**self.data)
-        rendered = stream.events.render()
+        rendered = stream.events.render(encoding='utf-8')
         ok_('We sell stuff' in rendered)
 
         dico = self.data.copy()
         del dico['footer']
         stream = self.oot.generate(**dico)
-        assert_raises(UndefinedError, lambda: stream.events.render())
+        assert_raises(UndefinedError,
+            lambda: stream.events.render(encoding='utf-8'))
 
     def test_generate(self):
         "Testing that content get rendered"
         stream = self.oot.generate(**self.data)
-        rendered = stream.events.render()
+        rendered = stream.events.render(encoding='utf-8')
         ok_('Bonjour,' in rendered)
         ok_('Trente' in rendered)
         ok_('Møller' in rendered)
@@ -256,7 +257,7 @@ class TestOOTemplating(object):
         "Testing the filters with the Translator filter"
         stream = self.oot.generate(**self.data)
         translated = stream.filter(Translator(pseudo_gettext))
-        translated_xml = translated.events.render()
+        translated_xml = translated.events.render(encoding='utf-8')
         ok_("Hello," in translated_xml)
         ok_("I am an odt templating test" in translated_xml)
         ok_('Felix da housecat' not in translated_xml)
@@ -267,7 +268,7 @@ class TestOOTemplating(object):
     def test_images(self):
         "Testing the image replacement directive"
         stream = self.oot.generate(**self.data)
-        rendered = stream.events.render()
+        rendered = stream.events.render(encoding='utf-8')
         styles_idx = rendered.find('<?relatorio styles.xml?>')
         tree = lxml.etree.parse(StringIO(rendered[25:styles_idx]))
         root = tree.getroot()
