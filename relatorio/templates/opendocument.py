@@ -237,6 +237,7 @@ class Template(MarkupTemplate):
         self.namespaces = {}
         self.inner_docs = []
         self.has_col_loop = False
+        self._zip_source = None
         super(Template, self).__init__(source, filepath, filename, loader,
                                        encoding, lookup, allow_exec)
 
@@ -245,7 +246,19 @@ class Template(MarkupTemplate):
 
         It adds genshi directives and finds the inner docs.
         """
-        zf = zipfile.ZipFile(self.filepath)
+        if not self.filepath:
+            if isinstance(source, file):
+                if 'U' in source.mode:
+                    # TemplateLoader of Genshi <= 0.6 open files with universal
+                    # newlines which is not suitable for zipfile
+                    raise ValueError('filepath is required '
+                        'if source is openned with universal newlines')
+                else:
+                    # source could be closed before generate calls
+                    source = StringIO(source.read())
+        else:
+            source = self.filepath
+        self._zip_source = zf = zipfile.ZipFile(source)
         content = zf.read('content.xml')
         styles = zf.read('styles.xml')
 
@@ -268,7 +281,6 @@ class Template(MarkupTemplate):
             content_files.append((c_path, c_parsed))
             styles_files.append((s_path, s_parsed))
 
-        zf.close()
         parsed = []
         for fpath, fparsed in content_files + styles_files:
             parsed.append((genshi.core.PI, ('relatorio', fpath), None))
@@ -692,7 +704,7 @@ class Template(MarkupTemplate):
 
     def generate(self, *args, **kwargs):
         "creates the RelatorioStream."
-        serializer = OOSerializer(self.filepath)
+        serializer = OOSerializer(self._zip_source)
         kwargs['__relatorio_make_href'] = ImageHref(serializer.outzip,
                                                     serializer.manifest,
                                                     kwargs)
@@ -822,8 +834,8 @@ class Meta(object):
 
 class OOSerializer:
 
-    def __init__(self, oo_path):
-        self.inzip = zipfile.ZipFile(oo_path)
+    def __init__(self, inzip):
+        self.inzip = inzip
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.meta = Meta(self.inzip.read(META))
         self.new_oo = StringIO()
@@ -864,7 +876,6 @@ class OOSerializer:
         self.manifest.remove_file_entry(THUMBNAILS + '/')
         if manifest_info:
             self.outzip.writestr(manifest_info, str(self.manifest))
-        self.inzip.close()
         self.outzip.close()
 
         return self.new_oo

@@ -1,3 +1,5 @@
+ * Allow to pass only source to Template
+
 0.5.7 - 20130126
  * Allow string as bitstream for images
 
