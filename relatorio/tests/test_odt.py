@@ -43,11 +43,16 @@ def pseudo_gettext(string):
                'Bonjour,': 'Hello,',
                'Je suis un test de templating en odt.':
                 'I am an odt templating test',
-               'Felix da housecat': unicode('Félix le chat de la maison',
-                                            'utf8'),
+               'Felix da housecat': u'Félix le chat de la maison',
                'We sell stuff': u'On vend des choses',
               }
     return catalog.get(string, string)
+
+def stream_to_string(stream):
+    # In Python 3, stream will be bytes
+    if not isinstance(stream, str):
+        return str(stream, 'utf-8')
+    return stream
 
 
 class TestOOTemplating(object):
@@ -55,21 +60,21 @@ class TestOOTemplating(object):
     def setup(self):
         thisdir = os.path.dirname(__file__)
         filepath = os.path.join(thisdir, 'test.odt')
-        self.oot = Template(file(filepath), filepath)
+        self.oot = Template(open(filepath, mode='rb'))
         self.data = {'first_name': u'Trente',
-                     'last_name': unicode('Møller', 'utf8'),
-                     'ville': unicode('Liège', 'utf8'),
+                     'last_name': u'Møller',
+                     'ville': u'Liège',
                      'friends': [{'first_name': u'Camille',
                                   'last_name': u'Salauhpe'},
                                  {'first_name': u'Mathias',
                                   'last_name': u'Lechat'}],
                      'hobbies': [u'Music', u'Dancing', u'DJing'],
                      'animals': [u'Felix da housecat', u'Dog eat Dog'],
-                     'images': [(file(os.path.join(thisdir, 'one.jpg')),
+                     'images': [(open(os.path.join(thisdir, 'one.jpg'), 'rb'),
                                  'image/jpeg'),
-                                (file(os.path.join(thisdir, 'two.png')),
+                                (open(os.path.join(thisdir, 'two.png'), 'rb'),
                                  'image/png')],
-                     'oeuf': file(os.path.join(thisdir, 'egg.jpg')),
+                     'oeuf': open(os.path.join(thisdir, 'egg.jpg'), 'rb'),
                      'footer': u'We sell stuff'}
 
     def test_init(self):
@@ -80,7 +85,7 @@ class TestOOTemplating(object):
 
     def test_directives(self):
         "Testing the directives interpolation"
-        xml = '''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
+        xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
                     <text:a xlink:href="relatorio://foo">foo</text:a>
                  </xml>'''
         interpolated = self.oot.insert_directives(xml)
@@ -89,7 +94,7 @@ class TestOOTemplating(object):
         eq_(child.get('{http://genshi.edgewall.org/}replace'), 'foo')
 
     def test_column_looping(self):
-        xml = '''
+        xml = b'''
 <table:table
     xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
     xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
@@ -216,7 +221,7 @@ class TestOOTemplating(object):
 
     def test_text_outside_p(self):
         "Testing that the tail text of a directive node is handled properly"
-        xml = '''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
+        xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
                     <text:a xlink:href="relatorio://if%20test=%22True%22">if test=&quot;True&quot;</text:a>
                     xxx
                     <text:p text:style-name="other">yyy</text:p>
@@ -234,7 +239,7 @@ class TestOOTemplating(object):
     def test_styles(self):
         "Testing that styles get rendered"
         stream = self.oot.generate(**self.data)
-        rendered = stream.events.render(encoding='utf-8')
+        rendered = stream_to_string(stream.events.render(encoding='utf-8'))
         ok_('We sell stuff' in rendered)
 
         dico = self.data.copy()
@@ -246,7 +251,7 @@ class TestOOTemplating(object):
     def test_generate(self):
         "Testing that content get rendered"
         stream = self.oot.generate(**self.data)
-        rendered = stream.events.render(encoding='utf-8')
+        rendered = stream_to_string(stream.events.render(encoding='utf-8'))
         ok_('Bonjour,' in rendered)
         ok_('Trente' in rendered)
         ok_('Møller' in rendered)
@@ -257,7 +262,8 @@ class TestOOTemplating(object):
         "Testing the filters with the Translator filter"
         stream = self.oot.generate(**self.data)
         translated = stream.filter(Translator(pseudo_gettext))
-        translated_xml = translated.events.render(encoding='utf-8')
+        translated_xml = stream_to_string(
+            translated.events.render(encoding='utf-8'))
         ok_("Hello," in translated_xml)
         ok_("I am an odt templating test" in translated_xml)
         ok_('Felix da housecat' not in translated_xml)
@@ -268,7 +274,7 @@ class TestOOTemplating(object):
     def test_images(self):
         "Testing the image replacement directive"
         stream = self.oot.generate(**self.data)
-        rendered = stream.events.render(encoding='utf-8')
+        rendered = stream_to_string(stream.events.render(encoding='utf-8'))
         styles_idx = rendered.find('<?relatorio styles.xml?>')
         tree = lxml.etree.parse(StringIO(rendered[25:styles_idx]))
         root = tree.getroot()
@@ -304,8 +310,3 @@ class TestOOTemplating(object):
         # another non matching expr
         group = GENSHI_EXPR.match('formatLang("en")').groups()
         eq_(group, (None, None, None, None))
-
-    def test_str(self):
-        "Testing that a RelatorioStream str returns a bitstream"
-        stream = str(self.oot.generate(**self.data))
-        ok_(isinstance(stream, str))

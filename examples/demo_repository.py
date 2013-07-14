@@ -28,5 +28,5 @@ if __name__ == '__main__':
         print "generating '%s'..." % filename,
         report, mimetype, desc = repository.by_id(Invoice, report_name)
         data = report(o=inv).render().getvalue()
-        file(join(dirname(__file__), filename), 'wb').write(data)
+        open(join(dirname(__file__), filename), 'wb').write(data)
         print "done"

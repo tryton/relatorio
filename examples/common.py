@@ -38,6 +38,6 @@ inv = Invoice(customer={'name': 'John Bonham',
                     ],
               id='MZY-20080703',
               status='late',
-              bottle=(file(join(dirname(__file__), 'bouteille.png'), 'r'),
+              bottle=(open(join(dirname(__file__), 'bouteille.png'), 'rb'),
                   'image/png'))
 

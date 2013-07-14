@@ -32,9 +32,12 @@ import time
 import urllib
 import zipfile
 try:
-    from cStringIO import StringIO
+    from io import BytesIO
 except ImportError:
-    from StringIO import StringIO
+    try:
+        from cStringIO import StringIO as BytesIO
+    except ImportError:
+        from StringIO import StringIO as BytesIO
 from copy import deepcopy
 import datetime
 from decimal import Decimal
@@ -130,7 +133,7 @@ class ImageHref:
         elif isinstance(bitstream, ChartTemplate):
             bitstream = bitstream.generate(**self.context).render()
         elif not hasattr(bitstream, 'seek') or not hasattr(bitstream, 'read'):
-            bitstream = StringIO(bitstream)
+            bitstream = BytesIO(bitstream)
         bitstream.seek(0)
         file_content = bitstream.read()
         name = md5(file_content).hexdigest()
@@ -247,7 +250,7 @@ class Template(MarkupTemplate):
         It adds genshi directives and finds the inner docs.
         """
         if not self.filepath:
-            if isinstance(source, file):
+            if hasattr(source, 'read') and hasattr(source, 'mode'):
                 if 'U' in source.mode:
                     # TemplateLoader of Genshi <= 0.6 open files with universal
                     # newlines which is not suitable for zipfile
@@ -255,7 +258,7 @@ class Template(MarkupTemplate):
                         'if source is openned with universal newlines')
                 else:
                     # source could be closed before generate calls
-                    source = StringIO(source.read())
+                    source = BytesIO(source.read())
         else:
             source = self.filepath
         self._zip_source = zf = zipfile.ZipFile(source)
@@ -291,7 +294,7 @@ class Template(MarkupTemplate):
     def insert_directives(self, content):
         """adds the genshi directives, handle the images and the innerdocs.
         """
-        tree = lxml.etree.parse(StringIO(content))
+        tree = lxml.etree.parse(BytesIO(content))
         root = tree.getroot()
 
         # assign default/fake namespaces so that documents do not need to
@@ -318,7 +321,7 @@ class Template(MarkupTemplate):
         self._handle_images(tree)
         self._handle_innerdocs(tree)
         self._escape_values(tree)
-        return StringIO(lxml.etree.tostring(tree))
+        return BytesIO(lxml.etree.tostring(tree))
 
     def _invert_style(self, tree):
         "inverts the text:a and text:span"
@@ -764,13 +767,17 @@ class DuplicateColumnHeaders(object):
 class Manifest(object):
 
     def __init__(self, content):
-        self.tree = lxml.etree.parse(StringIO(content))
+        self.tree = lxml.etree.parse(BytesIO(content))
         self.root = self.tree.getroot()
         self.namespaces = self.root.nsmap
 
     def __str__(self):
-        return lxml.etree.tostring(self.tree, encoding='UTF-8',
-                                   xml_declaration=True)
+        val = lxml.etree.tostring(self.tree, encoding='UTF-8',
+                                  xml_declaration=True)
+        # In Python 3, val will be bytes
+        if not isinstance(val, str):
+            return str(val, 'utf-8')
+        return val
 
     def add_file_entry(self, path, mimetype=None):
         manifest_namespace = self.namespaces['manifest']
@@ -794,7 +801,7 @@ class Manifest(object):
 class Meta(object):
 
     def __init__(self, content):
-        self.tree = lxml.etree.parse(StringIO(content))
+        self.tree = lxml.etree.parse(BytesIO(content))
         root = self.tree.getroot()
         self.namespaces = root.nsmap
         path = '/office:document-meta/office:meta'
@@ -828,8 +835,12 @@ class Meta(object):
         self.remove('printed-by')
         self.remove('creator', 'dc')
         self.remove('date', 'dc')
-        return lxml.etree.tostring(self.tree, encoding='UTF-8',
-                                   xml_declaration=True)
+        val = lxml.etree.tostring(self.tree, encoding='UTF-8',
+                                  xml_declaration=True)
+        # In Python 3, val will be bytes
+        if not isinstance(val, str):
+            return str(val, 'utf-8')
+        return val
 
 
 class OOSerializer:
@@ -838,7 +849,7 @@ class OOSerializer:
         self.inzip = inzip
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.meta = Meta(self.inzip.read(META))
-        self.new_oo = StringIO()
+        self.new_oo = BytesIO()
         self.outzip = zipfile.ZipFile(self.new_oo, 'w')
         self.xml_serializer = genshi.output.XMLSerializer()
 

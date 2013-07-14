@@ -10,6 +10,6 @@ if __name__ == '__main__':
     report = Report(abspath(join(dirname(__file__), 'basic.tex')),
         'application/pdf')
     content = report(o=inv).render().getvalue()
-    file(join(dirname(__file__), 'output_basic.pdf'), 'wb').write(content)
+    open(join(dirname(__file__), 'output_basic.pdf'), 'wb').write(content)
     print "done"
 
