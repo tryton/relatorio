@@ -1,5 +1,6 @@
 from os.path import abspath, join, dirname
 from relatorio import Report
+from relatorio.templates import opendocument
 
 # test data
 from common import inv
@@ -17,10 +18,12 @@ if __name__ == '__main__':
     print "done"
 
     # we could also use an opendocument template directly
-#    from relatorio.templates import opendocument
-#    template = opendocument.Template(source=None, filepath='basic.odt')
-#    content = template.generate(o=inv).render().getvalue()
-#    open('output_basic.odt', 'wb').write(content)
+    print "generating output_template_basic.odt... ",
+    template = opendocument.Template(source=None,
+        filepath=abspath(join(dirname(__file__), 'basic.odt')))
+    content = template.generate(o=inv).render().getvalue()
+    open(join(dirname(__file__), 'output_template_basic.odt'), 'wb').write(content)
+    print "done"
 
     print "generating output_complicated.odt... ",
     # Add a chart to the invoice
