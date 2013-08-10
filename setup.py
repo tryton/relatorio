@@ -9,9 +9,9 @@ def get_version():
 
 setup(
     name="relatorio",
-    url="http://relatorio.openhex.org/",
+    url="http://code.google.com/p/python-relatorio/",
     author="Nicolas Evrard",
-    author_email="nicoe@openhex.org",
+    author_email="nicolas.evrard@b2ck.com",
     maintainer="Cedric Krier",
     maintainer_email="cedric.krier@b2ck.com",
     description="A templating library able to output odt and pdf files",
