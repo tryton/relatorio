@@ -1,3 +1,4 @@
+0.6.0 - 20130810
  * Add support for Python 3
  * Allow to pass only source to Template
 
