@@ -240,7 +240,7 @@ class Template(MarkupTemplate):
         self.namespaces = {}
         self.inner_docs = []
         self.has_col_loop = False
-        self._zip_source = None
+        self._source = None
         super(Template, self).__init__(source, filepath, filename, loader,
                                        encoding, lookup, allow_exec)
 
@@ -261,7 +261,8 @@ class Template(MarkupTemplate):
                     source = BytesIO(source.read())
         else:
             source = self.filepath
-        self._zip_source = zf = zipfile.ZipFile(source)
+        self._source = source
+        zf = zipfile.ZipFile(source)
         content = zf.read('content.xml')
         styles = zf.read('styles.xml')
 
@@ -283,6 +284,7 @@ class Template(MarkupTemplate):
                                        encoding)
             content_files.append((c_path, c_parsed))
             styles_files.append((s_path, s_parsed))
+        zf.close()
 
         parsed = []
         for fpath, fparsed in content_files + styles_files:
@@ -707,7 +709,7 @@ class Template(MarkupTemplate):
 
     def generate(self, *args, **kwargs):
         "creates the RelatorioStream."
-        serializer = OOSerializer(self._zip_source)
+        serializer = OOSerializer(self._source)
         kwargs['__relatorio_make_href'] = ImageHref(serializer.outzip,
                                                     serializer.manifest,
                                                     kwargs)
@@ -845,8 +847,8 @@ class Meta(object):
 
 class OOSerializer:
 
-    def __init__(self, inzip):
-        self.inzip = inzip
+    def __init__(self, source):
+        self.inzip = zipfile.ZipFile(source)
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.meta = Meta(self.inzip.read(META))
         self.new_oo = BytesIO()
@@ -887,6 +889,7 @@ class OOSerializer:
         self.manifest.remove_file_entry(THUMBNAILS + '/')
         if manifest_info:
             self.outzip.writestr(manifest_info, str(self.manifest))
+        self.inzip.close()
         self.outzip.close()
 
         return self.new_oo
