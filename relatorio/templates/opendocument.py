@@ -262,6 +262,7 @@ class Template(MarkupTemplate):
         else:
             source = self.filepath
         self._source = source
+        self.filepath = None  # Prevent zip content in traceback
         zf = zipfile.ZipFile(source)
         content = zf.read('content.xml')
         styles = zf.read('styles.xml')
