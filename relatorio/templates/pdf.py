@@ -24,10 +24,7 @@ import os
 import shutil
 import tempfile
 import subprocess
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import BytesIO
 
 import genshi
 import genshi.output
@@ -63,7 +60,7 @@ class PDFSerializer:
         subprocess.check_call([TEXEXEC, '--purge', 'report.tex'],
                               cwd=self.working_dir)
 
-        pdf = StringIO()
+        pdf = BytesIO()
         pdf.write(open(self.pdf_file, 'r').read())
 
         shutil.rmtree(self.working_dir, ignore_errors=True)

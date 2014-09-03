@@ -1,3 +1,4 @@
+* Use io module instead of StringIO
 * Explicitly close ZipFile
 
 0.6.0 - 20130810

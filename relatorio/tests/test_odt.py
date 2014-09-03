@@ -21,10 +21,7 @@
 
 
 import os
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 import lxml.etree
 from nose.tools import *
@@ -50,8 +47,8 @@ def pseudo_gettext(string):
 
 def stream_to_string(stream):
     # In Python 3, stream will be bytes
-    if not isinstance(stream, str):
-        return str(stream, 'utf-8')
+    if not isinstance(stream, unicode):
+        return unicode(stream, 'utf-8')
     return stream
 
 
@@ -254,7 +251,7 @@ class TestOOTemplating(object):
         rendered = stream_to_string(stream.events.render(encoding='utf-8'))
         ok_('Bonjour,' in rendered)
         ok_('Trente' in rendered)
-        ok_('Møller' in rendered)
+        ok_(u'Møller' in rendered)
         ok_('Dog eat Dog' in rendered)
         ok_('Felix da housecat' in rendered)
 
@@ -267,7 +264,7 @@ class TestOOTemplating(object):
         ok_("Hello," in translated_xml)
         ok_("I am an odt templating test" in translated_xml)
         ok_('Felix da housecat' not in translated_xml)
-        ok_('Félix le chat de la maison' in translated_xml)
+        ok_(u'Félix le chat de la maison' in translated_xml)
         ok_('We sell stuff' not in translated_xml)
         ok_('On vend des choses' in translated_xml)
 

@@ -18,26 +18,12 @@
 #
 ###############################################################################
 
-import traceback
 import warnings
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
 plugins = ['base', 'opendocument', 'pdf', 'chart']
 
 for name in plugins:
     try:
         __import__('relatorio.templates.%s' % name)
-    except Exception, e:
-        tb_file = StringIO()
-
-        print >> tb_file, ("Unable to load plugin '%s', you will not be able "
-                           "to use it" % name)
-        print >> tb_file
-        print >> tb_file, 'Original traceback:'
-        print >> tb_file, '-------------------'
-        traceback.print_exc(file=tb_file)
-        print >> tb_file
-        warnings.warn(tb_file.getvalue())
+    except ImportError:
+        warnings.warn("Unable to load plugin '%s'" % name)

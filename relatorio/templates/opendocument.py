@@ -31,13 +31,7 @@ except ImportError:
 import time
 import urllib
 import zipfile
-try:
-    from io import BytesIO
-except ImportError:
-    try:
-        from cStringIO import StringIO as BytesIO
-    except ImportError:
-        from StringIO import StringIO as BytesIO
+from io import BytesIO
 from copy import deepcopy
 import datetime
 from decimal import Decimal
