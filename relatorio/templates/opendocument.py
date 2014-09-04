@@ -219,7 +219,7 @@ def update_py_attrs(node, value):
     if not value:
         return
     py_attrs_attr = '{%s}attrs' % GENSHI_URI
-    if not py_attrs_attr in node.attrib:
+    if py_attrs_attr not in node.attrib:
         node.attrib[py_attrs_attr] = value
     else:
         node.attrib[py_attrs_attr] = \
@@ -358,7 +358,7 @@ class Template(MarkupTemplate):
                 raise OOTemplateError("No expression in the tag",
                                       self.filepath)
             closing, directive, attr, attr_val = \
-                    GENSHI_EXPR.match(expr).groups()
+                GENSHI_EXPR.match(expr).groups()
             is_opening = closing != '/'
 
             warn_msg = None
@@ -433,7 +433,7 @@ class Template(MarkupTemplate):
                         pass
                     o_ancestors.append(node)
                 assert ancestor is not None, \
-                       "No common ancestor found for opening and closing tag"
+                    "No common ancestor found for opening and closing tag"
 
                 outermost_o_ancestor = o_ancestors[-1]
                 outermost_c_ancestor = c_ancestors[-1]
@@ -574,7 +574,7 @@ class Template(MarkupTemplate):
             for tag in to_split:
                 tag_pos = table_node.index(tag)
                 num = int(tag.attrib.pop(table_num_col_attr))
-                new_tags = [deepcopy(tag) for _ in range(num)]
+                new_tags = [deepcopy(tag) for i in range(num)]
                 table_node[tag_pos:tag_pos + 1] = new_tags
 
             # compute the column header nodes corresponding to
@@ -585,10 +585,10 @@ class Template(MarkupTemplate):
             # add a <relatorio:repeat> node around the column
             # definitions nodes
             attribs = {
-               "opening": str(opening_pos),
-               "closing": str(closing_pos),
-               "table": table_name
-            }
+                "opening": str(opening_pos),
+                "closing": str(closing_pos),
+                "table": table_name,
+                }
             repeat_node = EtreeElement(repeat_tag, attrib=attribs,
                                        nsmap={'relatorio': RELATORIO_URI})
             wrap_nodes_between(first, last, repeat_node)
@@ -809,7 +809,7 @@ class Meta(object):
         meta = self.office_meta.find('{%s}%s' % (namespace, name))
         if meta is None:
             meta = EtreeElement('{%s}%s' % (namespace, name),
-                                            nsmap={'meta': namespace})
+                                nsmap={'meta': namespace})
             self.office_meta.append(meta)
         meta.text = value
 

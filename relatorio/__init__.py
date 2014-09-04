@@ -13,3 +13,4 @@ from .reporting import MIMETemplateLoader, ReportRepository, Report
 from . import templates
 
 __version__ = '0.6.1'
+__all__ = ['MIMETemplateLoader', 'ReportRepository', 'Report', 'templates']

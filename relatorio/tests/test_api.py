@@ -20,7 +20,7 @@
 
 
 import os
-from nose.tools import *
+from nose.tools import assert_true, eq_, assert_raises
 
 from relatorio.reporting import (ReportRepository, Report, MIMETemplateLoader,
                                  DefaultFactory, _absolute, _guess_type)

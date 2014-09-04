@@ -2,6 +2,7 @@ import os
 import re
 from setuptools import setup, find_packages
 
+
 def get_version():
     init = open(os.path.join(os.path.dirname(__file__), 'relatorio',
                              '__init__.py')).read()

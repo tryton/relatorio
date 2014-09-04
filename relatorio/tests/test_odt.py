@@ -24,7 +24,7 @@ import os
 from io import StringIO
 
 import lxml.etree
-from nose.tools import *
+from nose.tools import ok_, eq_, assert_raises
 from genshi.filters import Translator
 from genshi.core import PI
 from genshi.template.eval import UndefinedError
@@ -39,11 +39,12 @@ def pseudo_gettext(string):
     catalog = {'Mes collègues sont:': 'My colleagues are:',
                'Bonjour,': 'Hello,',
                'Je suis un test de templating en odt.':
-                'I am an odt templating test',
+               'I am an odt templating test',
                'Felix da housecat': u'Félix le chat de la maison',
                'We sell stuff': u'On vend des choses',
               }
     return catalog.get(string, string)
+
 
 def stream_to_string(stream):
     # In Python 3, stream will be bytes
