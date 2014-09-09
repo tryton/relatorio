@@ -12,5 +12,5 @@ and report together, find reports by mimetypes/name/python objects.
 from .reporting import MIMETemplateLoader, ReportRepository, Report
 from . import templates
 
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 __all__ = ['MIMETemplateLoader', 'ReportRepository', 'Report', 'templates']
