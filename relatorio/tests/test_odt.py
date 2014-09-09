@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 ###############################################################################
 #
+# Copyright (c) 2014 Cedric Krier.
 # Copyright (c) 2007, 2008 OpenHex SPRL. (http://openhex.com) All Rights
 # Reserved.
 #

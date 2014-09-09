@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# Copyright (c) 2009-2013 Cedric Krier.
+# Copyright (c) 2009-2014 Cedric Krier.
 # Copyright (c) 2007, 2008 OpenHex SPRL. (http://openhex.com) All Rights
 # Reserved.
 #
