@@ -59,12 +59,20 @@ except ImportError:
 
 GENSHI_EXPR = re.compile(r'''
         (/)?                                 # is this a closing tag?
-        (for|if|choose|when|otherwise|with)  # tag directive
+        (for|if|choose|when|otherwise|with|
+         attrs|content|replace|strip)        # tag directive
         \s*
-        (?:\s(\w+)=["'](.*)["']|$)           # match a single attr & its value
+        (?:\s([\w:-]+)=["'](.*)["']|$)       # match a single attr & its value
         |
         .*                                   # or anything else
         ''', re.VERBOSE)
+GENSHI_CLOSING_DIRECTIVE = ['for',
+                            'if',
+                            'choose',
+                            'when',
+                            'otherwise',
+                            'with',
+                            ]
 
 EXTENSIONS = {'image/png': 'png',
               'image/jpeg': 'jpg',
@@ -375,7 +383,7 @@ class Template(MarkupTemplate):
                                 % opened_tags[-1].text
                 warnings.warn(warn_msg)
 
-            if directive is not None:
+            if directive in GENSHI_CLOSING_DIRECTIVE:
                 # map closing tags with their opening tag
                 if is_opening:
                     opened_tags.append(statement)
@@ -410,7 +418,7 @@ class Template(MarkupTemplate):
             expr, directive, attr, a_val = parsed
 
             # If the node is a genshi directive statement:
-            if directive is not None:
+            if directive in GENSHI_CLOSING_DIRECTIVE:
                 opening = r_node
                 closing = closing_tags[id(r_node)]
 
@@ -462,6 +470,21 @@ class Template(MarkupTemplate):
                 # - we delete the closing statement (and its ancestors)
                 wrap_nodes_between(outermost_o_ancestor, outermost_c_ancestor,
                                    genshi_node)
+            elif directive:
+                # find the first parent with the same tag name as the attribute
+                parent = r_node
+                namespace, name = attr.split(':')
+                attr = '{%s}%s' % (self.namespaces[namespace], name)
+                while parent is not None and parent.tag != attr:
+                    parent = parent.getparent()
+                assert parent is not None, "Parent not found"
+
+                # add the py:attribute to the parent
+                py_attr = '{%s}%s' % (GENSHI_URI, directive)
+                parent.attrib[py_attr] = a_val
+
+                # remove the directive node
+                r_node.getparent().remove(r_node)
             else:
                 # It's not a genshi statement it's a python expression
                 parent = r_node.getparent().getparent()

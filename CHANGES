@@ -1,3 +1,5 @@
+* Add directives: attrs, content, replace and strip
+
 0.6.1 - 20140909
 * Use io module instead of StringIO
 * Explicitly close ZipFile
