@@ -22,10 +22,10 @@
 
 
 import os
+import unittest
 from io import StringIO
 
 import lxml.etree
-from nose.tools import ok_, eq_, assert_raises
 from genshi.filters import Translator
 from genshi.core import PI
 from genshi.template.eval import UndefinedError
@@ -54,9 +54,9 @@ def stream_to_string(stream):
     return stream
 
 
-class TestOOTemplating(object):
+class TestOOTemplating(unittest.TestCase):
 
-    def setup(self):
+    def setUp(self):
         thisdir = os.path.dirname(__file__)
         filepath = os.path.join(thisdir, 'test.odt')
         self.oot = Template(open(filepath, mode='rb'))
@@ -78,9 +78,11 @@ class TestOOTemplating(object):
 
     def test_init(self):
         "Testing the correct handling of the styles.xml and content.xml files"
-        ok_(isinstance(self.oot.stream, list))
-        eq_(self.oot.stream[0], (PI, ('relatorio', 'content.xml'), None))
-        ok_((PI, ('relatorio', 'content.xml'), None) in self.oot.stream)
+        self.assertTrue(isinstance(self.oot.stream, list))
+        self.assertEqual(
+            self.oot.stream[0], (PI, ('relatorio', 'content.xml'), None))
+        self.assertTrue(
+            (PI, ('relatorio', 'content.xml'), None) in self.oot.stream)
 
     def test_directives(self):
         "Testing the directives interpolation"
@@ -90,7 +92,8 @@ class TestOOTemplating(object):
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         child = root_interpolated[0]
-        eq_(child.get('{http://genshi.edgewall.org/}replace'), 'foo')
+        self.assertEqual(
+            child.get('{http://genshi.edgewall.org/}replace'), 'foo')
 
     def test_column_looping(self):
         xml = b'''
@@ -198,25 +201,25 @@ class TestOOTemplating(object):
         interpolated = self.oot.insert_directives(xml)
         root = lxml.etree.parse(interpolated).getroot()
         child2 = root[1]
-        eq_(child2.tag, "{%s}repeat" % RELATORIO_URI)
-        eq_(child2.get("closing"), "3")
-        eq_(child2.get("opening"), "1")
-        eq_(len(child2), 1)
+        self.assertEqual(child2.tag, "{%s}repeat" % RELATORIO_URI)
+        self.assertEqual(child2.get("closing"), "3")
+        self.assertEqual(child2.get("opening"), "1")
+        self.assertEqual(len(child2), 1)
         child4 = root[3]
-        eq_(child4.tag, "{%s}table-header-rows" % OO_TABLE_NS)
+        self.assertEqual(child4.tag, "{%s}table-header-rows" % OO_TABLE_NS)
         row1 = child4[0]
-        ok_(row1.get("{%s}attrs" % GENSHI_URI)
+        self.assertTrue(row1.get("{%s}attrs" % GENSHI_URI)
                 .startswith('__relatorio_reset_col_count'))
-        eq_(len(row1), 4)
+        self.assertEqual(len(row1), 4)
         loop = row1[1]
-        eq_(loop.tag, "{%s}for" % GENSHI_URI)
+        self.assertEqual(loop.tag, "{%s}for" % GENSHI_URI)
         cell = loop[0]
-        ok_(cell.get("{%s}attrs" % GENSHI_URI)
+        self.assertTrue(cell.get("{%s}attrs" % GENSHI_URI)
                 .startswith('__relatorio_inc_col_count'))
         last_row_node = row1[3]
-        eq_(last_row_node.tag, "{%s}replace" % GENSHI_URI)
-        ok_(last_row_node.get("value")
-                         .startswith('__relatorio_store_col_count'))
+        self.assertEqual(last_row_node.tag, "{%s}replace" % GENSHI_URI)
+        self.assertTrue(last_row_node.get("value")
+                        .startswith('__relatorio_store_col_count'))
 
     def test_text_outside_p(self):
         "Testing that the tail text of a directive node is handled properly"
@@ -231,31 +234,31 @@ class TestOOTemplating(object):
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         child = root_interpolated[0]
-        eq_(child.tag, '{http://genshi.edgewall.org/}if')
-        eq_(child.text.strip(), 'xxx')
-        eq_(child.tail.strip(), 'aaa')
+        self.assertEqual(child.tag, '{http://genshi.edgewall.org/}if')
+        self.assertEqual(child.text.strip(), 'xxx')
+        self.assertEqual(child.tail.strip(), 'aaa')
 
     def test_styles(self):
         "Testing that styles get rendered"
         stream = self.oot.generate(**self.data)
         rendered = stream_to_string(stream.events.render(encoding='utf-8'))
-        ok_('We sell stuff' in rendered)
+        self.assertTrue('We sell stuff' in rendered)
 
         dico = self.data.copy()
         del dico['footer']
         stream = self.oot.generate(**dico)
-        assert_raises(UndefinedError,
+        self.assertRaises(UndefinedError,
             lambda: stream.events.render(encoding='utf-8'))
 
     def test_generate(self):
         "Testing that content get rendered"
         stream = self.oot.generate(**self.data)
         rendered = stream_to_string(stream.events.render(encoding='utf-8'))
-        ok_('Bonjour,' in rendered)
-        ok_('Trente' in rendered)
-        ok_(u'Møller' in rendered)
-        ok_('Dog eat Dog' in rendered)
-        ok_('Felix da housecat' in rendered)
+        self.assertTrue('Bonjour,' in rendered)
+        self.assertTrue('Trente' in rendered)
+        self.assertTrue(u'Møller' in rendered)
+        self.assertTrue('Dog eat Dog' in rendered)
+        self.assertTrue('Felix da housecat' in rendered)
 
     def test_filters(self):
         "Testing the filters with the Translator filter"
@@ -263,12 +266,12 @@ class TestOOTemplating(object):
         translated = stream.filter(Translator(pseudo_gettext))
         translated_xml = stream_to_string(
             translated.events.render(encoding='utf-8'))
-        ok_("Hello," in translated_xml)
-        ok_("I am an odt templating test" in translated_xml)
-        ok_('Felix da housecat' not in translated_xml)
-        ok_(u'Félix le chat de la maison' in translated_xml)
-        ok_('We sell stuff' not in translated_xml)
-        ok_('On vend des choses' in translated_xml)
+        self.assertTrue("Hello," in translated_xml)
+        self.assertTrue("I am an odt templating test" in translated_xml)
+        self.assertTrue('Felix da housecat' not in translated_xml)
+        self.assertTrue(u'Félix le chat de la maison' in translated_xml)
+        self.assertTrue('We sell stuff' not in translated_xml)
+        self.assertTrue('On vend des choses' in translated_xml)
 
     def test_images(self):
         "Testing the image replacement directive"
@@ -278,34 +281,38 @@ class TestOOTemplating(object):
         tree = lxml.etree.parse(StringIO(rendered[25:styles_idx]))
         root = tree.getroot()
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
-        eq_(len(images), 3)
-        eq_(images[0].get('{%s}name' % self.oot.namespaces['draw']), "")
-        eq_(images[1].get('{%s}name' % self.oot.namespaces['draw']), '')
-        eq_(images[1].get('{%s}width' % self.oot.namespaces['svg']),
-            '1.732cm')
-        eq_(images[1].get('{%s}height' % self.oot.namespaces['svg']),
+        self.assertEqual(len(images), 3)
+        self.assertEqual(
+            images[0].get('{%s}name' % self.oot.namespaces['draw']), "")
+        self.assertEqual(
+            images[1].get('{%s}name' % self.oot.namespaces['draw']), '')
+        self.assertEqual(
+            images[1].get('{%s}width' % self.oot.namespaces['svg']), '1.732cm')
+        self.assertEqual(
+            images[1].get('{%s}height' % self.oot.namespaces['svg']),
             '1.513cm')
-        eq_(images[2].get('{%s}width' % self.oot.namespaces['svg']),
-            '1.732cm')
-        eq_(images[2].get('{%s}height' % self.oot.namespaces['svg']),
+        self.assertEqual(
+            images[2].get('{%s}width' % self.oot.namespaces['svg']), '1.732cm')
+        self.assertEqual(
+            images[2].get('{%s}height' % self.oot.namespaces['svg']),
             '1.513cm')
 
     def test_regexp(self):
         "Testing the regexp used to find relatorio tags"
         # a valid expression
         group = GENSHI_EXPR.match('for each="foo in bar"').groups()
-        eq_(group, (None, 'for', 'each', 'foo in bar'))
+        self.assertEqual(group, (None, 'for', 'each', 'foo in bar'))
 
         # invalid expr
         group = GENSHI_EXPR.match('foreach="foo in bar"').groups()
-        eq_(group, (None, None, None, None))
+        self.assertEqual(group, (None, None, None, None))
 
         # valid closing tags
         group = GENSHI_EXPR.match('/for').groups()
-        eq_(group, ('/', 'for', None, None))
+        self.assertEqual(group, ('/', 'for', None, None))
         group = GENSHI_EXPR.match('/for ').groups()
-        eq_(group, ('/', 'for', None, None))
+        self.assertEqual(group, ('/', 'for', None, None))
 
         # another non matching expr
         group = GENSHI_EXPR.match('formatLang("en")').groups()
-        eq_(group, (None, None, None, None))
+        self.assertEqual(group, (None, None, None, None))

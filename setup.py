@@ -47,8 +47,5 @@ and report together, find reports by mimetypes/name/python objects.
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Text Processing",
     ],
-    test_suite="nose.collector",
-    tests_require=[
-        "nose",
-    ],
+    test_suite="relatorio.tests",
     use_2to3=True)

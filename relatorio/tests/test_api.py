@@ -21,7 +21,7 @@
 
 
 import os
-from nose.tools import assert_true, eq_, assert_raises
+import unittest
 
 from relatorio.reporting import (ReportRepository, Report, MIMETemplateLoader,
                                  DefaultFactory, _absolute, _guess_type)
@@ -34,7 +34,7 @@ class StubObject(object):
             setattr(self, key, val)
 
 
-class TestRepository(object):
+class TestRepository(unittest.TestCase):
 
     def test_register(self):
         "Testing the registration"
@@ -43,45 +43,47 @@ class TestRepository(object):
                              os.path.join('templates', 'test.tmpl'),
                              description='Test report')
 
-        assert_true(StubObject in reporting.classes)
-        assert_true('default' in reporting.classes[StubObject].ids)
-        assert_true('text/plain' in reporting.classes[StubObject].mimetypes)
+        self.assertTrue(StubObject in reporting.classes)
+        self.assertTrue('default' in reporting.classes[StubObject].ids)
+        self.assertTrue(
+            'text/plain' in reporting.classes[StubObject].mimetypes)
 
         report, mime, desc = reporting.classes[StubObject].ids['default']
-        eq_(mime, 'text/plain')
-        eq_(desc, 'Test report')
-        eq_(report.mimetype, 'text/plain')
-        assert_true(report.fpath.endswith(os.path.join('templates',
+        self.assertEqual(mime, 'text/plain')
+        self.assertEqual(desc, 'Test report')
+        self.assertEqual(report.mimetype, 'text/plain')
+        self.assertTrue(report.fpath.endswith(os.path.join('templates',
                                                        'test.tmpl')))
 
         report2, name = (reporting.classes[StubObject]
                          .mimetypes['text/plain'][0])
-        eq_(name, 'default')
-        eq_(report, report2)
+        self.assertEqual(name, 'default')
+        self.assertEqual(report, report2)
 
     def test_mimeguesser(self):
-        eq_(_guess_type('application/pdf'), 'pdf')
-        eq_(_guess_type('text/plain'), 'text')
-        eq_(_guess_type('text/xhtml'), 'markup')
-        eq_(_guess_type('application/vnd.oasis.opendocument.text'), 'oo.org')
+        self.assertEqual(_guess_type('application/pdf'), 'pdf')
+        self.assertEqual(_guess_type('text/plain'), 'text')
+        self.assertEqual(_guess_type('text/xhtml'), 'markup')
+        self.assertEqual(
+            _guess_type('application/vnd.oasis.opendocument.text'), 'oo.org')
 
     def abspath_helper(self, path):
         return _absolute(path)
 
     def test_absolute(self):
         "Test the absolute path calculation"
-        eq_("/home/nicoe/python/mock.py",
+        self.assertEqual("/home/nicoe/python/mock.py",
             _absolute("/home/nicoe/python/mock.py"))
 
         our_dir, _ = os.path.split(__file__)
         # We use this because me go up by two frames
         new_path = self.abspath_helper(os.path.join('brol', 'toto'))
-        eq_(os.path.join(our_dir, 'brol', 'toto'), new_path)
+        self.assertEqual(os.path.join(our_dir, 'brol', 'toto'), new_path)
 
 
-class TestReport(object):
+class TestReport(unittest.TestCase):
 
-    def setup(self):
+    def setUp(self):
         self.loader = MIMETemplateLoader()
         our_dir, _ = os.path.split(__file__)
         self.report = Report(os.path.join(our_dir, 'templates', 'test.tmpl'),
@@ -90,7 +92,7 @@ class TestReport(object):
     def test_report(self):
         "Testing the report generation"
         a = StubObject(name='OpenHex')
-        eq_(self.report(o=a).render(), 'Hello OpenHex.\n')
+        self.assertEqual(self.report(o=a).render(), 'Hello OpenHex.\n')
 
     def test_factory(self):
         "Testing the data factory"
@@ -108,18 +110,18 @@ class TestReport(object):
                         'text/plain', MyFactory(), self.loader)
 
         a = StubObject(name='Foo')
-        eq_(report(o=a, time="One o'clock").render(),
+        self.assertEqual(report(o=a, time="One o'clock").render(),
             "Hi Foo,\nIt's One o'clock to 2 !\n")
-        eq_(report(o=a, time="One o'clock", y=4).render(),
+        self.assertEqual(report(o=a, time="One o'clock", y=4).render(),
             "Hi Foo,\nIt's One o'clock to 5 !\n")
-        assert_raises(TypeError, report, a)
+        self.assertRaises(TypeError, report, a)
 
 
-class TestReportInclude(object):
+class TestReportInclude(unittest.TestCase):
 
     def test_include(self):
         our_dir = os.path.dirname(__file__)
         template_path = os.path.join(our_dir, 'templates')
         relative_report = Report(os.path.join(template_path, 'include.tmpl'),
                                  'text/plain')
-        eq_(relative_report().render(), 'Another Hello.\n\n')
+        self.assertEqual(relative_report().render(), 'Another Hello.\n\n')
