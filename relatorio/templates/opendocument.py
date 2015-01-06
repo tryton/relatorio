@@ -685,6 +685,7 @@ class Template(MarkupTemplate):
         draw_name = '{%s}name' % draw_namespace
         draw_image = '{%s}image' % draw_namespace
         py_attrs = '{%s}attrs' % self.namespaces['py']
+        end_cell_address = '{%s}end-cell-address' % self.namespaces['table']
         svg_namespace = self.namespaces['svg']
         svg_width = '{%s}width' % svg_namespace
         svg_height = '{%s}height' % svg_namespace
@@ -706,6 +707,8 @@ class Template(MarkupTemplate):
                          "__relatorio_store_cache(%s, %s), '%s', '%s')" %
                          (cache_id, d_name, width, height))
             draw.attrib[py_attrs] = attr_expr
+            # remove end-cell-address as the address specified could be wrong
+            draw.attrib.pop(end_cell_address, '')
 
     def _handle_innerdocs(self, tree):
         "finds inner_docs and adds them to the processing stack."

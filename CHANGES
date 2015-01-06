@@ -1,3 +1,4 @@
+* Remove table:end-cell-address from draw:frame as the address could be wrong
 * Remove nose
 * Add directives: attrs, content, replace and strip
 
