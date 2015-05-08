@@ -155,8 +155,9 @@ class ImageDimension:
     def __call__(self, expr, width, height):
         # expr could be (bitstream, mimetype)
         # or (bitstreamm mimetype, width, height)
-        if len(expr) == 4:
-            width, height = expr[2:]
+        if len(expr) >= 4:
+            width, height = (
+                i or j for i, j in zip(expr[2:4], [width, height]))
         attrs = {}
         if width:
             attrs['{%s}width' % self.namespaces['svg']] = width
@@ -693,7 +694,6 @@ class Template(MarkupTemplate):
         for draw in tree.xpath(xpath_expr, namespaces=self.namespaces):
             cache_id = id(draw)
             d_name = draw.attrib[draw_name][6:].strip()
-            draw.attrib[draw_name] = ''  # clean template code
             attr_expr = ("__relatorio_make_href(__relatorio_get_cache(%s))" %
                          cache_id)
             image_node = EtreeElement(draw_image,
@@ -707,6 +707,9 @@ class Template(MarkupTemplate):
                          "__relatorio_store_cache(%s, %s), '%s', '%s')" %
                          (cache_id, d_name, width, height))
             draw.attrib[py_attrs] = attr_expr
+            draw.attrib.pop(draw_name)
+            dico = "{'%s': (__relatorio_get_cache(%s)[4:5] or [''])[0]}"
+            update_py_attrs(draw, dico % (draw_name, cache_id))
             # remove end-cell-address as the address specified could be wrong
             draw.attrib.pop(end_cell_address, '')
 

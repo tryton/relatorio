@@ -70,9 +70,9 @@ class TestOOTemplating(unittest.TestCase):
                      'hobbies': [u'Music', u'Dancing', u'DJing'],
                      'animals': [u'Felix da housecat', u'Dog eat Dog'],
                      'images': [(open(os.path.join(thisdir, 'one.jpg'), 'rb'),
-                                 'image/jpeg'),
+                                 'image/jpeg', None, None, 'One'),
                                 (open(os.path.join(thisdir, 'two.png'), 'rb'),
-                                 'image/png')],
+                                 'image/png', '2cm', '2.2cm', 'Two')],
                      'oeuf': open(os.path.join(thisdir, 'egg.jpg'), 'rb'),
                      'footer': u'We sell stuff'}
 
@@ -283,19 +283,21 @@ class TestOOTemplating(unittest.TestCase):
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
         self.assertEqual(len(images), 3)
         self.assertEqual(
-            images[0].get('{%s}name' % self.oot.namespaces['draw']), "")
+            images[0].get('{%s}name' % self.oot.namespaces['draw']), '')
         self.assertEqual(
-            images[1].get('{%s}name' % self.oot.namespaces['draw']), '')
+            images[1].get('{%s}name' % self.oot.namespaces['draw']), 'One')
+        self.assertEqual(
+            images[2].get('{%s}name' % self.oot.namespaces['draw']), 'Two')
         self.assertEqual(
             images[1].get('{%s}width' % self.oot.namespaces['svg']), '1.732cm')
         self.assertEqual(
             images[1].get('{%s}height' % self.oot.namespaces['svg']),
             '1.513cm')
         self.assertEqual(
-            images[2].get('{%s}width' % self.oot.namespaces['svg']), '1.732cm')
+            images[2].get('{%s}width' % self.oot.namespaces['svg']), '2cm')
         self.assertEqual(
             images[2].get('{%s}height' % self.oot.namespaces['svg']),
-            '1.513cm')
+            '2.2cm')
 
     def test_regexp(self):
         "Testing the regexp used to find relatorio tags"
