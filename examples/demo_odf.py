@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     # we could also use an opendocument template directly
     print "generating output_template_basic.odt... ",
-    template = opendocument.Template(source=None,
+    template = opendocument.Template(source='',
         filepath=abspath(join(dirname(__file__), 'basic.odt')))
     content = template.generate(o=inv).render().getvalue()
     open(join(dirname(__file__), 'output_template_basic.odt'), 'wb').write(content)
