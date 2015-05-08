@@ -82,7 +82,7 @@ EXTENSIONS = {'image/png': 'png',
               'image/xbm': 'xbm',
              }
 
-RELATORIO_URI = 'http://relatorio.openhex.org/'
+RELATORIO_URI = 'relatorio'
 GENSHI_URI = 'http://genshi.edgewall.org/'
 MANIFEST = 'META-INF/manifest.xml'
 META = 'meta.xml'
