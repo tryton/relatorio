@@ -282,8 +282,8 @@ class TestOOTemplating(unittest.TestCase):
         root = tree.getroot()
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
         self.assertEqual(len(images), 3)
-        self.assertEqual(
-            images[0].get('{%s}name' % self.oot.namespaces['draw']), '')
+        self.assertFalse(
+            images[0].get('{%s}name' % self.oot.namespaces['draw']))
         self.assertEqual(
             images[1].get('{%s}name' % self.oot.namespaces['draw']), 'One')
         self.assertEqual(
