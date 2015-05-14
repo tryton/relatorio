@@ -10,7 +10,7 @@ def get_version():
 
 setup(
     name="relatorio",
-    url="http://code.google.com/p/python-relatorio/",
+    url="http://relatorio.tryton.org/",
     author="Nicolas Evrard",
     author_email="nicolas.evrard@b2ck.com",
     maintainer="Cedric Krier",
