@@ -1,6 +1,11 @@
 import os
 import re
+import codecs
 from setuptools import setup, find_packages
+
+def read(fname):
+    return codecs.open(
+        os.path.join(os.path.dirname(__file__), fname), 'r', 'utf-8').read()
 
 
 def get_version():
@@ -16,17 +21,7 @@ setup(
     maintainer="Cedric Krier",
     maintainer_email="cedric.krier@b2ck.com",
     description="A templating library able to output odt and pdf files",
-    long_description="""
-relatorio
-=========
-
-A templating library which provides a way to easily output all kind of
-different files (odt, ods, png, svg, ...). Adding support for more filetype is
-easy: you just have to create a plugin for this.
-
-relatorio also provides a report repository allowing you to link python objects
-and report together, find reports by mimetypes/name/python objects.
-    """,
+    long_description=read('README'),
     license="GPL License",
     version=get_version(),
     packages=find_packages(exclude=['examples']),

@@ -8,6 +8,11 @@ be easily added by creating plugins for them.
 Relatorio also provides a report repository allowing you to link python objects
 and report together, find reports by mimetype/name/python object.
 
+Documenation
+============
+
+The documenation is provided at http://relatorio.readthedocs.org/
+
 Note on PyCha
 =============
 
