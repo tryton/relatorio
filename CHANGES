@@ -1,3 +1,5 @@
+* Register MarkupTemplate for 'markup' mimetype instead of 'xml'
+
 0.6.2 - 20150919
 * Add name argument for "image:" in odf
 * Remove table:end-cell-address from draw:frame as the address could be wrong

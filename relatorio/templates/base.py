@@ -42,4 +42,4 @@ class RelatorioStream(genshi.core.Stream):
         return RelatorioStream(self.events | function, self.serializer)
 
 MIMETemplateLoader.add_factory('text', NewTextTemplate)
-MIMETemplateLoader.add_factory('xml', MarkupTemplate)
+MIMETemplateLoader.add_factory('markup', MarkupTemplate)
