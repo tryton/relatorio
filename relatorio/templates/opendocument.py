@@ -410,6 +410,10 @@ class Template(MarkupTemplate):
 
         office_name = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
+        if 'calcext' in self.namespaces:
+            calcext_valuetype = '{%s}value-type' % self.namespaces['calcext']
+        else:
+            calcext_valuetype = None
 
         py_replace = '{%s}replace' % GENSHI_URI
 
@@ -506,6 +510,12 @@ class Template(MarkupTemplate):
                          cache_id))
                 parent.attrib.pop(office_valuetype, None)
                 parent.attrib.pop(office_name, None)
+                if (calcext_valuetype and
+                        parent.attrib.pop(calcext_valuetype, None)):
+                    update_py_attrs(parent,
+                        "{'%s': __relatorio_guess_type("
+                        "__relatorio_get_cache(%s))}" %
+                        (calcext_valuetype, cache_id))
 
     def _handle_column_loops(self, statement, ancestor, opening,
                              outer_o_node, outer_c_node):
