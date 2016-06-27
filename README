@@ -20,6 +20,3 @@ Since the 0.4.0 release, pycha upstream author included most of our patches. So
 it is not necessary anymore to use our friendly fork of the project.
 
 For SVG support, you need PyCha 0.4.2 or later.
-
-    http://www.lorenzogil.com/projects/pycha/
-

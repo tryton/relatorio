@@ -32,6 +32,9 @@ setup(
         "Genshi >= 0.5",
         "lxml >= 2.0"
     ],
+    extras_require={
+        'chart': ['pycha >= 0.4.0', 'pyyaml'],  # pycairo
+        },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
