@@ -1,3 +1,4 @@
+0.6.3 - 20160629
 * Update calcext:value-type with the same guessed type
 * Register MarkupTemplate for 'markup' mimetype instead of 'xml'
 
