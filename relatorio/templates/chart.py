@@ -21,7 +21,7 @@
 
 __metaclass__ = type
 
-from io import BytesIO
+from io import BytesIO, StringIO
 
 import yaml
 import genshi
@@ -66,7 +66,7 @@ class CairoSerializer:
 
     def __call__(self, stream):
         result = BytesIO()
-        yml = BytesIO(_encode(self.text_serializer(stream)))
+        yml = StringIO(_encode(self.text_serializer(stream)))
         chart_yaml = yaml.load(yml.read())
         chart_info = chart_yaml['chart']
         chart_type = chart_info['output_type']
