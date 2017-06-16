@@ -25,7 +25,7 @@ This report will be created and rendered with the following three line of code::
 
 
     from relatorio.templates.opendocument import Template
-    basic = Template(source=None, filepath='basic.odt')
+    basic = Template(source='', filepath='basic.odt')
     file('bonham_basic.odt', 'wb').write(basic.generate(o=inv).render().getvalue())
 
 Notice that the dictionary passed to `generate` is used to bind names to make
