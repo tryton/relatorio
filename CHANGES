@@ -1,3 +1,5 @@
+* Add support for Flat OpenDocument
+
 0.6.4 - 20161218
 * Use StringIO instead of BytesIO for TextSerializer result
 

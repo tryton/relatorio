@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# Copyright (c) 2009-2014 Cedric Krier.
+# Copyright (c) 2009-2017 Cedric Krier.
 # Copyright (c) 2007, 2008 OpenHex SPRL. (http://openhex.com) All Rights
 # Reserved.
 #
@@ -28,6 +28,8 @@ try:
 except ImportError:
     from md5 import md5
 
+import base64
+import mimetypes
 import time
 import urllib
 import zipfile
@@ -266,7 +268,7 @@ class Template(MarkupTemplate):
             source = self.filepath
         self._source = source
         self.filepath = None  # Prevent zip content in traceback
-        zf = zipfile.ZipFile(source)
+        zf = get_zip_file(source)
         content = zf.read('content.xml')
         styles = zf.read('styles.xml')
 
@@ -800,6 +802,85 @@ class DuplicateColumnHeaders(object):
                 yield mark, (kind, data, pos)
 
 
+def get_zip_file(source):
+    try:
+        return zipfile.ZipFile(source)
+    except zipfile.BadZipfile:
+        # ZipFile modify the position
+        if hasattr(source, 'seek'):
+            source.seek(0)
+        return zipfile.ZipFile(fod2od(source))
+
+
+def fod2od(source):
+    "Convert Flat OpenDocument to OpenDocument"
+    odt_io = BytesIO()
+    odt_zip = zipfile.ZipFile(odt_io, mode='w')
+    fodt_tree = lxml.etree.parse(source)
+    fodt_root = fodt_tree.getroot()
+    office_ns = fodt_root.nsmap['office']
+    tag2files = {
+        '{%s}meta' % office_ns: ['meta'],
+        '{%s}settings' % office_ns: ['settings'],
+        '{%s}scripts' % office_ns: ['content'],
+        '{%s}font-face-decls' % office_ns: ['content', 'styles'],
+        '{%s}styles' % office_ns: ['styles'],
+        '{%s}automatic-styles' % office_ns: ['content', 'styles'],
+        '{%s}master-styles' % office_ns: ['styles'],
+        '{%s}body' % office_ns: ['content'],
+        }
+    mimetype = fodt_root.attrib['{%s}mimetype' % office_ns]
+    documents = {}
+    images = []
+    for child in fodt_root:
+        for fname in tag2files[child.tag]:
+            document = documents.get(fname)
+            if document is None:
+                document = lxml.etree.Element(
+                    '{%s}document-%s' % (office_ns, fname),
+                    nsmap=fodt_root.nsmap)
+                documents[fname] = document
+            child = deepcopy(child)
+            images.extend(extract_images(
+                    child, fodt_root.nsmap, start=len(images)))
+            document.append(child)
+    manifest = Manifest('''<?xml version="1.0" encoding="UTF-8"?>
+        <manifest:manifest
+        xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"/>
+        ''')
+    manifest.add_file_entry('/', mimetype)
+    for fname, document in documents.iteritems():
+        document_string = lxml.etree.tostring(document, encoding='UTF-8',
+                                              xml_declaration=True)
+        odt_zip.writestr('%s.xml' % fname, document_string)
+        manifest.add_file_entry('%s.xml' % fname, 'text/xml')
+    for fname, data, mime_type in images:
+        odt_zip.writestr(fname, data)
+        manifest.add_file_entry(fname, mime_type)
+    odt_zip.writestr(MANIFEST, str(manifest))
+    odt_zip.writestr('mimetype', mimetype)
+    return odt_io
+
+
+def extract_images(child, namespaces, start=0):
+    "Extract draw:image with binary-data and replace by href"
+    import magic
+    images = []
+    for i, image in enumerate(
+            child.xpath('//draw:image', namespaces=namespaces), start):
+        binary_data, = image.xpath(
+            './office:binary-data', namespaces=namespaces)
+        data = base64.b64decode(binary_data.text)
+        mime_type = magic.from_buffer(data, mime=True)
+        name = 'Pictures/image%s%s' % (
+            i, mimetypes.guess_extension(mime_type))
+        image.remove(binary_data)
+        xlink_ns = namespaces['xlink']
+        image.attrib['{%s}href' % xlink_ns] = name
+        images.append((name, data, mime_type))
+    return images
+
+
 class Manifest(object):
 
     def __init__(self, content):
@@ -882,7 +963,7 @@ class Meta(object):
 class OOSerializer:
 
     def __init__(self, source):
-        self.inzip = zipfile.ZipFile(source)
+        self.inzip = get_zip_file(source)
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.meta = Meta(self.inzip.read(META))
         self.new_oo = BytesIO()

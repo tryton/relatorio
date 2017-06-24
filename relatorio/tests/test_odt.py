@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 ###############################################################################
 #
-# Copyright (c) 2014 Cedric Krier.
+# Copyright (c) 2014-2017 Cedric Krier.
 # Copyright (c) 2007, 2008 OpenHex SPRL. (http://openhex.com) All Rights
 # Reserved.
 #
@@ -31,7 +31,7 @@ from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
 from relatorio.templates.opendocument import Template, GENSHI_EXPR,\
-    GENSHI_URI, RELATORIO_URI
+    GENSHI_URI, RELATORIO_URI, fod2od
 
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 
@@ -318,3 +318,16 @@ class TestOOTemplating(unittest.TestCase):
         # another non matching expr
         group = GENSHI_EXPR.match('formatLang("en")').groups()
         self.assertEqual(group, (None, None, None, None))
+
+    def test_fodt2odt(self):
+        "Testing converter fodt to odt"
+        thisdir = os.path.dirname(__file__)
+        filepath = os.path.join(thisdir, 'test.fodt')
+        fod2od(filepath)
+
+    def test_generate_fod(self):
+        "Testing generate fod"
+        thisdir = os.path.dirname(__file__)
+        filepath = os.path.join(thisdir, 'test.fodt')
+        oot = Template(open(filepath, mode='rb'))
+        oot.generate(**self.data)

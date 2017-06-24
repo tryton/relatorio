@@ -34,6 +34,7 @@ setup(
     ],
     extras_require={
         'chart': ['pycha >= 0.4.0', 'pyyaml'],  # pycairo
+        'fodt': ['python-magic'],
         },
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -46,4 +47,5 @@ setup(
         "Topic :: Text Processing",
     ],
     test_suite="relatorio.tests",
+    tests_require=['python-magic'],
     use_2to3=True)
