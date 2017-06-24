@@ -844,7 +844,7 @@ def fod2od(source):
             images.extend(extract_images(
                     child, fodt_root.nsmap, start=len(images)))
             document.append(child)
-    manifest = Manifest('''<?xml version="1.0" encoding="UTF-8"?>
+    manifest = Manifest(b'''<?xml version="1.0" encoding="UTF-8"?>
         <manifest:manifest
         xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"/>
         ''')
