@@ -3,6 +3,7 @@ import re
 import codecs
 from setuptools import setup, find_packages
 
+
 def read(fname):
     return codecs.open(
         os.path.join(os.path.dirname(__file__), fname), 'r', 'utf-8').read()
@@ -26,7 +27,8 @@ setup(
     version=get_version(),
     packages=find_packages(exclude=['examples']),
     package_data={
-        'relatorio.tests': ['*.jpg', '*.odt', '*.png', 'templates/*.tmpl'],
+        'relatorio.tests': [
+            '*.jpg', '*.odt', '*.fodt', '*.png', 'templates/*.tmpl'],
         },
     install_requires=[
         "Genshi >= 0.5",
