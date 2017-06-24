@@ -59,7 +59,8 @@ class TestOOTemplating(unittest.TestCase):
     def setUp(self):
         thisdir = os.path.dirname(__file__)
         filepath = os.path.join(thisdir, 'test.odt')
-        self.oot = Template(open(filepath, mode='rb'))
+        self._source = open(filepath, mode='rb')
+        self.oot = Template(self._source)
         self.data = {'first_name': u'Trente',
                      'last_name': u'Møller',
                      'ville': u'Liège',
@@ -75,6 +76,12 @@ class TestOOTemplating(unittest.TestCase):
                                  'image/png', '2cm', '2.2cm', 'Two')],
                      'oeuf': open(os.path.join(thisdir, 'egg.jpg'), 'rb'),
                      'footer': u'We sell stuff'}
+
+    def tearDown(self):
+        self._source.close()
+        for image in self.data['images']:
+            image[0].close()
+        self.data['oeuf'].close()
 
     def test_init(self):
         "Testing the correct handling of the styles.xml and content.xml files"
@@ -329,5 +336,6 @@ class TestOOTemplating(unittest.TestCase):
         "Testing generate fod"
         thisdir = os.path.dirname(__file__)
         filepath = os.path.join(thisdir, 'test.fodt')
-        oot = Template(open(filepath, mode='rb'))
-        oot.generate(**self.data)
+        with open(filepath, mode='rb') as source:
+            oot = Template(source)
+            oot.generate(**self.data)
