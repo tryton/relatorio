@@ -111,12 +111,6 @@ EtreeElement = lxml.etree.Element
 # parent node defines it. Unfortunately, lxml doesn't support this:
 # the nsmap attribute of Element objects is (currently) readonly.
 
-def guess_type(val):
-    if isinstance(val, (str, unicode)):
-        return 'string'
-    elif isinstance(val, (int, float, long, Decimal)):
-        return 'float'
-
 
 class OOTemplateError(genshi.template.base.TemplateSyntaxError):
     "Error to raise when there is a SyntaxError in the genshi template"
@@ -410,13 +404,6 @@ class Template(MarkupTemplate):
         table_row_tag = '{%s}table-row' % table_namespace
         table_cell_tag = '{%s}table-cell' % table_namespace
 
-        office_name = '{%s}value' % self.namespaces['office']
-        office_valuetype = '{%s}value-type' % self.namespaces['office']
-        if 'calcext' in self.namespaces:
-            calcext_valuetype = '{%s}value-type' % self.namespaces['calcext']
-        else:
-            calcext_valuetype = None
-
         py_replace = '{%s}replace' % GENSHI_URI
 
         r_statements, closing_tags = self._relatorio_statements(tree)
@@ -494,8 +481,12 @@ class Template(MarkupTemplate):
                 r_node.getparent().remove(r_node)
             else:
                 # It's not a genshi statement it's a python expression
-                parent = r_node.getparent().getparent()
-                if parent is None or parent.tag != table_cell_tag:
+                parent = r_node.getparent()
+                grand_parent = parent.getparent()
+                # Guess type only if it is the only value in the cell
+                if (grand_parent is None
+                        or grand_parent.tag != table_cell_tag
+                        ) or len(parent) != 1:
                     r_node.attrib[py_replace] = expr
                     continue
 
@@ -504,20 +495,9 @@ class Template(MarkupTemplate):
                                              cache_id)
                 # The grand-parent tag is a table cell we should set the
                 # correct value and type for this cell.
-                dico = ("{'%s': __relatorio_store_cache(%s, %s), "
-                        "'%s': __relatorio_guess_type("
-                        "__relatorio_get_cache(%s))}")
-                update_py_attrs(parent, dico %
-                        (office_name, cache_id, expr, office_valuetype,
-                         cache_id))
-                parent.attrib.pop(office_valuetype, None)
-                parent.attrib.pop(office_name, None)
-                if (calcext_valuetype and
-                        parent.attrib.pop(calcext_valuetype, None)):
-                    update_py_attrs(parent,
-                        "{'%s': __relatorio_guess_type("
-                        "__relatorio_get_cache(%s))}" %
-                        (calcext_valuetype, cache_id))
+                dico = ('__relatorio_guess_type('
+                        '__relatorio_store_cache(%s, %s))')
+                update_py_attrs(parent, dico % (cache_id, expr))
 
     def _handle_column_loops(self, statement, ancestor, opening,
                              outer_o_node, outer_c_node):
@@ -743,6 +723,41 @@ class Template(MarkupTemplate):
             if element.text:
                 element.text = element.text.replace(PREFIX, PREFIX * 2)
 
+    def _guess_type(self, val):
+        office_namespace = self.namespaces['office']
+        types = {'boolean': '{%s}boolean-value' % office_namespace,
+                 'currency': '{%s}currency' % office_namespace,
+                 'date': '{%s}date-value' % office_namespace,
+                 'float': '{%s}value' % office_namespace,
+                 'percentage': '{%s}value' % office_namespace,
+                 'string': '{%s}string-value' % office_namespace,
+                 'time': '{%s}time-value' % office_namespace,
+                 'void': '{%s}value' % office_namespace,
+                 }
+        attrs = {k: None for k in types.itervalues()}
+        # Missing base type for currency and percentage
+        if isinstance(val, bool):
+            type_ = 'boolean'
+            val = str(val).lower()
+        elif isinstance(val, datetime.date):
+            type_ = 'date'
+            val = val.date()
+        elif isinstance(val, (int, float, long, Decimal)):
+            type_ = 'float'
+        elif isinstance(val, basestring):
+            type_ = 'string'
+        elif isinstance(val, datetime.timedelta):
+            type_ = 'time'
+            val = 'P%sD%sS' % (val.days, val.seconds)
+        else:
+            type_ = 'void'
+            val = None
+        attrs[types[type_]] = val
+        attrs['{%s}value-type' % office_namespace] = type_
+        if 'calcext' in self.namespaces:
+            attrs['{%s}value-type' % self.namespaces['calcext']] = type_
+        return attrs
+
     def generate(self, *args, **kwargs):
         "creates the RelatorioStream."
         serializer = OOSerializer(self._source)
@@ -750,7 +765,7 @@ class Template(MarkupTemplate):
                                                     serializer.manifest,
                                                     kwargs)
         kwargs['__relatorio_make_dimension'] = ImageDimension(self.namespaces)
-        kwargs['__relatorio_guess_type'] = guess_type
+        kwargs['__relatorio_guess_type'] = self._guess_type
 
         counter = ColumnCounter()
         kwargs['__relatorio_reset_col_count'] = counter.reset
