@@ -734,7 +734,7 @@ class Template(MarkupTemplate):
                  'time': '{%s}time-value' % office_namespace,
                  'void': '{%s}value' % office_namespace,
                  }
-        attrs = {k: None for k in types.itervalues()}
+        attrs = dict.fromkeys(types)
         # Missing base type for currency and percentage
         if isinstance(val, bool):
             type_ = 'boolean'
