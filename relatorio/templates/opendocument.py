@@ -76,14 +76,6 @@ GENSHI_CLOSING_DIRECTIVE = ['for',
                             'with',
                             ]
 
-EXTENSIONS = {'image/png': 'png',
-              'image/jpeg': 'jpg',
-              'image/bmp': 'bmp',
-              'image/gif': 'gif',
-              'image/tiff': 'tif',
-              'image/xbm': 'xbm',
-             }
-
 RELATORIO_URI = 'relatorio'
 GENSHI_URI = 'http://genshi.edgewall.org/'
 MANIFEST = 'META-INF/manifest.xml'
@@ -135,7 +127,8 @@ class ImageHref:
         bitstream.seek(0)
         file_content = bitstream.read()
         name = md5(file_content).hexdigest()
-        path = 'Pictures/%s.%s' % (name, EXTENSIONS[mimetype])
+        path = 'Pictures/%s%s' % (
+            name, mimetypes.guess_extension(mimetype))
         if path not in self.zip.namelist():
             self.zip.writestr(path, file_content)
             self.manifest.add_file_entry(path, mimetype)
