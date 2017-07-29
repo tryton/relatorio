@@ -1,3 +1,4 @@
+0.7.0 - 20170729
 * Replace hard-coded extensions by mimetypes guess
 * Add more guess types: 'boolean', 'date', 'time' and 'void'
 * Add support for Flat OpenDocument
