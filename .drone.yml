@@ -7,8 +7,8 @@ pipeline:
         image: ${IMAGE}
         commands:
             - pip install tox
-            - sudo apt-get update
-            - sudo apt-get install -y python-cairo
+            - apt-get update
+            - apt-get install -y python-cairo
             - tox -e "${TOXENV}"
         volumes:
              - cache:/root/.cache
