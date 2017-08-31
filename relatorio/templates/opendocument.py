@@ -867,6 +867,7 @@ def fod2od(source):
         manifest.add_file_entry(fname, mime_type)
     odt_zip.writestr(MANIFEST, str(manifest))
     odt_zip.writestr('mimetype', mimetype)
+    odt_zip.close()
     return odt_io
 
 
