@@ -734,7 +734,7 @@ class Template(MarkupTemplate):
             val = str(val).lower()
         elif isinstance(val, datetime.date):
             type_ = 'date'
-            val = val.date()
+            val = val.isoformat()
         elif isinstance(val, (int, float, long, Decimal)):
             type_ = 'float'
         elif isinstance(val, basestring):
