@@ -490,7 +490,7 @@ class Template(MarkupTemplate):
                 # correct value and type for this cell.
                 dico = ('__relatorio_guess_type('
                         '__relatorio_store_cache(%s, %s))')
-                update_py_attrs(parent, dico % (cache_id, expr))
+                update_py_attrs(grand_parent, dico % (cache_id, expr))
 
     def _handle_column_loops(self, statement, ancestor, opening,
                              outer_o_node, outer_c_node):

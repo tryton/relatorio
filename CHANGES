@@ -1,3 +1,4 @@
+* Apply the guess type function on the correct node
 * Fix guess_type for date and datetime
 
 0.7.0 - 20170729
