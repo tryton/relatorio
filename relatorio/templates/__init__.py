@@ -18,12 +18,7 @@
 #
 ###############################################################################
 
-import warnings
-
 plugins = ['base', 'opendocument', 'pdf', 'chart']
 
 for name in plugins:
-    try:
-        __import__('relatorio.templates.%s' % name)
-    except ImportError:
-        warnings.warn("Unable to load plugin '%s'" % name)
+    __import__('relatorio.templates.%s' % name)

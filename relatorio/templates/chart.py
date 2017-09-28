@@ -23,7 +23,6 @@ __metaclass__ = type
 
 from io import BytesIO, StringIO
 
-import yaml
 import genshi
 import genshi.output
 from genshi.template import NewTextTemplate
@@ -31,17 +30,22 @@ from genshi.template import NewTextTemplate
 from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import MIMETemplateLoader
 
-import cairo
-import pycha
-import pycha.pie
-import pycha.line
-import pycha.bar
+try:
+    import yaml
+    import cairo
+    import pycha
+    import pycha.pie
+    import pycha.line
+    import pycha.bar
 
-PYCHA_TYPE = {'pie': pycha.pie.PieChart,
-              'vbar': pycha.bar.VerticalBarChart,
-              'hbar': pycha.bar.HorizontalBarChart,
-              'line': pycha.line.LineChart,
-             }
+    PYCHA_TYPE = {'pie': pycha.pie.PieChart,
+                  'vbar': pycha.bar.VerticalBarChart,
+                  'hbar': pycha.bar.HorizontalBarChart,
+                  'line': pycha.line.LineChart,
+                 }
+except ImportError:
+    yaml = cairo = None
+    PYCHA_TYPE = {}
 _encode = genshi.output.encode
 
 
@@ -65,6 +69,8 @@ class CairoSerializer:
         self.text_serializer = genshi.output.TextSerializer()
 
     def __call__(self, stream):
+        if not PYCHA_TYPE:
+            raise NotImplementedError
         result = BytesIO()
         yml = StringIO(_encode(self.text_serializer(stream)))
         chart_yaml = yaml.load(yml.read())
