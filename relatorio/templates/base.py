@@ -18,12 +18,12 @@
 #
 ###############################################################################
 
-__metaclass__ = type
-
 import genshi.core
 from genshi.template import NewTextTemplate, MarkupTemplate
 
 from relatorio.reporting import MIMETemplateLoader
+
+__metaclass__ = type
 
 
 class RelatorioStream(genshi.core.Stream):

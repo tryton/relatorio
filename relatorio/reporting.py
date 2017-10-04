@@ -18,12 +18,12 @@
 #
 ###############################################################################
 
-__metaclass__ = type
-
 import os
 import sys
 
 from genshi.template import TemplateLoader
+
+__metaclass__ = type
 
 
 def _absolute(path):

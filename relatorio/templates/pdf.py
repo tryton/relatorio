@@ -19,8 +19,6 @@
 #
 ###############################################################################
 
-__metaclass__ = type
-
 import os
 import shutil
 import tempfile
@@ -33,6 +31,8 @@ from genshi.template import NewTextTemplate
 
 from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import MIMETemplateLoader
+
+__metaclass__ = type
 
 TEXEXEC = 'texexec'
 _encode = genshi.output.encode

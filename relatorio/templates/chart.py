@@ -19,8 +19,6 @@
 #
 ###############################################################################
 
-__metaclass__ = type
-
 from io import BytesIO, StringIO
 
 import genshi
@@ -47,6 +45,8 @@ except ImportError:
     yaml = cairo = None
     PYCHA_TYPE = {}
 _encode = genshi.output.encode
+
+__metaclass__ = type
 
 
 class Template(NewTextTemplate):

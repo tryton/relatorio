@@ -19,8 +19,6 @@
 #
 ###############################################################################
 
-__metaclass__ = type
-
 import re
 try:
     # requires python 2.5+
@@ -40,7 +38,6 @@ from decimal import Decimal
 
 
 import warnings
-warnings.filterwarnings('always', module='relatorio.templates.opendocument')
 
 import lxml.etree
 import genshi
@@ -58,6 +55,9 @@ try:
     from relatorio.templates.chart import Template as ChartTemplate
 except ImportError:
     ChartTemplate = type(None)
+
+__metaclass__ = type
+warnings.filterwarnings('always', module='relatorio.templates.opendocument')
 
 GENSHI_EXPR = re.compile(r'''
         (/)?                                 # is this a closing tag?

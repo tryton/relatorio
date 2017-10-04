@@ -1,5 +1,6 @@
 from os.path import join, dirname
 
+
 class Invoice(dict):
 
     @property
@@ -19,12 +20,12 @@ inv = Invoice(customer={'name': 'John Bonham',
                                'reference': 'VDKA-001',
                                'price': 10.34},
                       'quantity': 7,
-                      'amount': 7*10.34},
+                      'amount': 7 * 10.34},
                      {'item': {'name': 'Cognac 70cl',
                                'reference': 'CGNC-067',
                                'price': 13.46},
                       'quantity': 12,
-                      'amount': 12*13.46},
+                      'amount': 12 * 13.46},
                      {'item': {'name': 'Sparkling water 25cl',
                                'reference': 'WATR-007',
                                'price': 4},
@@ -40,4 +41,3 @@ inv = Invoice(customer={'name': 'John Bonham',
               status='late',
               bottle=(open(join(dirname(__file__), 'bouteille.png'), 'rb'),
                   'image/png'))
-
