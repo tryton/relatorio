@@ -1,3 +1,4 @@
+0.7.1 - 20171008
 * Remove warning when import plugin fails
 * Apply the guess type function on the correct node
 * Fix guess_type for date and datetime
