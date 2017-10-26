@@ -23,7 +23,7 @@
 
 import os
 import unittest
-from io import StringIO
+from io import StringIO, BytesIO
 
 import lxml.etree
 from genshi.filters import Translator
@@ -31,7 +31,7 @@ from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
 from relatorio.templates.opendocument import Template, GENSHI_EXPR,\
-    GENSHI_URI, RELATORIO_URI, fod2od
+    GENSHI_URI, RELATORIO_URI, fod2od, remove_node_keeping_tail
 
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 
@@ -339,3 +339,76 @@ class TestOOTemplating(unittest.TestCase):
         with open(filepath, mode='rb') as source:
             oot = Template(source)
             oot.generate(**self.data)
+
+
+class TestRemoveNodeKeepingTail(unittest.TestCase):
+
+    def test_without_tail(self):
+        "Testing remove_node_keeping_tail without tail"
+        xml = b'''<parent><target/></parent>'''
+        tree = lxml.etree.parse(BytesIO(xml))
+        target = tree.getroot()[0]
+
+        remove_node_keeping_tail(target)
+
+        self.assertEqual(lxml.etree.tostring(tree), b'''<parent/>''')
+
+    def test_with_tail(self):
+        "Testing remove_node_keeping_tail with tail"
+        xml = b'''<parent><target/>tail</parent>'''
+        tree = lxml.etree.parse(BytesIO(xml))
+        target = tree.getroot()[0]
+
+        remove_node_keeping_tail(target)
+
+        self.assertEqual(
+            lxml.etree.tostring(tree),
+            b'''<parent>tail</parent>''')
+
+    def test_with_tail_and_parent_text(self):
+        "Testing remove_node_keeping_tail with tail and parent text"
+        xml = b'''<parent>text<target/>tail</parent>'''
+        tree = lxml.etree.parse(BytesIO(xml))
+        target = tree.getroot()[0]
+
+        remove_node_keeping_tail(target)
+
+        self.assertEqual(
+            lxml.etree.tostring(tree),
+            b'''<parent>texttail</parent>''')
+
+    def test_without_tail_and_with_previous(self):
+        "Testing remove_node_keeping_tail without tail and with previous"
+        xml = b'''<parent><previous/><target/></parent>'''
+        tree = lxml.etree.parse(BytesIO(xml))
+        target = tree.getroot()[1]
+
+        remove_node_keeping_tail(target)
+
+        self.assertEqual(
+            lxml.etree.tostring(tree),
+            b'''<parent><previous/></parent>''')
+
+    def test_with_tail_and_previous(self):
+        "Testing remove_node_keeping_tail with tail and previous"
+        xml = b'''<parent><previous/><target/>tail</parent>'''
+        tree = lxml.etree.parse(BytesIO(xml))
+        target = tree.getroot()[1]
+
+        remove_node_keeping_tail(target)
+
+        self.assertEqual(
+            lxml.etree.tostring(tree),
+            b'''<parent><previous/>tail</parent>''')
+
+    def test_with_tail_and_previous_tail(self):
+        "Testing remove_node_keeping_tail with tail and previous tail"
+        xml = b'''<parent><previous/>tail<target/>tail</parent>'''
+        tree = lxml.etree.parse(BytesIO(xml))
+        target = tree.getroot()[1]
+
+        remove_node_keeping_tail(target)
+
+        self.assertEqual(
+            lxml.etree.tostring(tree),
+            b'''<parent><previous/>tailtail</parent>''')

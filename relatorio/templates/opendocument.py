@@ -211,6 +211,26 @@ def wrap_nodes_between(first, last, new_parent):
     old_parent.remove(last)
 
 
+def remove_node_keeping_tail(node):
+    """Remove the node from the tree but keeping tail by appending to the
+    previous or parent node.
+    """
+    parent = node.getparent()
+    if node.tail:
+        previous = node.getprevious()
+        if previous is not None:
+            if not previous.tail:
+                previous.tail = node.tail
+            else:
+                previous.tail += node.tail
+        else:
+            if not parent.text:
+                parent.text = node.tail
+            else:
+                parent.text += node.tail
+    parent.remove(node)
+
+
 def update_py_attrs(node, value):
     """An helper function to update py_attrs of a node.
     """
@@ -311,12 +331,24 @@ class Template(MarkupTemplate):
         self.namespaces['py'] = GENSHI_URI
         self.namespaces['relatorio'] = RELATORIO_URI
 
+        self._remove_soft_page_break(tree)
         self._invert_style(tree)
         self._handle_relatorio_tags(tree)
         self._handle_images(tree)
         self._handle_innerdocs(tree)
         self._escape_values(tree)
         return BytesIO(lxml.etree.tostring(tree))
+
+    def _remove_soft_page_break(self, tree):
+        "remove soft-page-break tag and use-soft-page-break attribute"
+        xpath_expr = "//text:soft-page-break"
+        for node in tree.xpath(xpath_expr, namespaces=self.namespaces):
+            remove_node_keeping_tail(node)
+
+        xpath_expr = "//office:text[@text:use-soft-page-breaks]"
+        text_namespace = self.namespaces['text']
+        for node in tree.xpath(xpath_expr, namespaces=self.namespaces):
+            node.attrib.pop('{%s}use-soft-page-breaks' % text_namespace)
 
     def _invert_style(self, tree):
         "inverts the text:a and text:span"
