@@ -23,3 +23,5 @@ matrix:
           TOXENV: py34
         - IMAGE: python:3.5
           TOXENV: py35
+        - IMAGE: python:3.6
+          TOXENV: py36
