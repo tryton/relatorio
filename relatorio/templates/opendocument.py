@@ -511,7 +511,7 @@ class Template(MarkupTemplate):
                 # Guess type only if it is the only value in the cell
                 if (grand_parent is None
                         or grand_parent.tag != table_cell_tag
-                        ) or len(parent) != 1:
+                        ) or len(grand_parent) != 1:
                     r_node.attrib[py_replace] = expr
                     continue
 
