@@ -429,6 +429,13 @@ class Template(MarkupTemplate):
         table_row_tag = '{%s}table-row' % table_namespace
         table_cell_tag = '{%s}table-cell' % table_namespace
 
+        office_value = '{%s}value' % self.namespaces['office']
+        office_valuetype = '{%s}value-type' % self.namespaces['office']
+        if 'calcext' in self.namespaces:
+            calcext_valuetype = '{%s}value-type' % self.namespaces['calcext']
+        else:
+            calcext_valuetype = None
+
         py_replace = '{%s}replace' % GENSHI_URI
 
         r_statements, closing_tags = self._relatorio_statements(tree)
@@ -523,6 +530,11 @@ class Template(MarkupTemplate):
                 dico = ('__relatorio_guess_type('
                         '__relatorio_store_cache(%s, %s))')
                 update_py_attrs(grand_parent, dico % (cache_id, expr))
+                for attr in [office_value,
+                             office_valuetype,
+                             calcext_valuetype]:
+                    if attr:
+                        grand_parent.attrib.pop(attr, None)
 
     def _handle_column_loops(self, statement, ancestor, opening,
                              outer_o_node, outer_c_node):

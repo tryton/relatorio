@@ -1,3 +1,4 @@
+* Remove type attributes when guessing type
 * Add support for Python 3.6
 * Remove soft-page-break
 
