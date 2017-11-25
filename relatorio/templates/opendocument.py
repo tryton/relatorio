@@ -428,6 +428,9 @@ class Template(MarkupTemplate):
         table_namespace = self.namespaces['table']
         table_row_tag = '{%s}table-row' % table_namespace
         table_cell_tag = '{%s}table-cell' % table_namespace
+        text_namespace = self.namespaces['text']
+        text_style_attributes = [s % text_namespace for s in [
+                '{%s}class-names', '{%s}cond-style-name', '{%s}style-name']]
 
         office_value = '{%s}value' % self.namespaces['office']
         office_valuetype = '{%s}value-type' % self.namespaces['office']
@@ -512,13 +515,17 @@ class Template(MarkupTemplate):
                 # remove the directive node
                 r_node.getparent().remove(r_node)
             else:
+                def has_style(node):
+                    return any(attr in node.attrib
+                               for attr in text_style_attributes)
                 # It's not a genshi statement it's a python expression
                 parent = r_node.getparent()
                 grand_parent = parent.getparent()
                 # Guess type only if it is the only value in the cell
+                # and its parent has no style
                 if (grand_parent is None
                         or grand_parent.tag != table_cell_tag
-                        ) or len(grand_parent) != 1:
+                        ) or len(grand_parent) != 1 or has_style(parent):
                     r_node.attrib[py_replace] = expr
                     continue
 
