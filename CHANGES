@@ -1,3 +1,4 @@
+0.8.0 - 20171204
 * Do not guess_type on styled cell content
 * Remove type attributes when guessing type
 * Add support for Python 3.6
