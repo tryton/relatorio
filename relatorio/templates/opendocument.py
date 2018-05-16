@@ -889,6 +889,8 @@ def fod2od(source):
         '{%s}body' % office_ns: ['content'],
         }
     mimetype = fodt_root.attrib['{%s}mimetype' % office_ns]
+    # mimetype should be written first to let detection through 'magic number'
+    odt_zip.writestr('mimetype', mimetype, zipfile.ZIP_STORED)
     documents = {}
     images = []
     for child in fodt_root:
@@ -917,7 +919,6 @@ def fod2od(source):
         odt_zip.writestr(fname, data)
         manifest.add_file_entry(fname, mime_type)
     odt_zip.writestr(MANIFEST, str(manifest))
-    odt_zip.writestr('mimetype', mimetype)
     odt_zip.close()
     return odt_io
 
