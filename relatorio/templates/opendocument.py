@@ -874,7 +874,8 @@ def get_zip_file(source):
 def fod2od(source):
     "Convert Flat OpenDocument to OpenDocument"
     odt_io = BytesIO()
-    odt_zip = zipfile.ZipFile(odt_io, mode='w')
+    odt_zip = zipfile.ZipFile(
+        odt_io, mode='w', compression=zipfile.ZIP_DEFLATED)
     fodt_tree = lxml.etree.parse(source)
     fodt_root = fodt_tree.getroot()
     office_ns = fodt_root.nsmap['office']
@@ -1028,7 +1029,8 @@ class OOSerializer:
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.meta = Meta(self.inzip.read(META))
         self.new_oo = BytesIO()
-        self.outzip = zipfile.ZipFile(self.new_oo, 'w')
+        self.outzip = zipfile.ZipFile(
+            self.new_oo, mode='w', compression=zipfile.ZIP_DEFLATED)
         self.xml_serializer = genshi.output.XMLSerializer()
 
     def __call__(self, stream):

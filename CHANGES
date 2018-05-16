@@ -1,3 +1,4 @@
+* Use compression for zip file
 * Write mimetype as first file of the zip file
 
 0.8.0 - 20171204
