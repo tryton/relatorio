@@ -408,9 +408,14 @@ class Template(MarkupTemplate):
             if directive in GENSHI_CLOSING_DIRECTIVE:
                 # map closing tags with their opening tag
                 if is_opening:
-                    opened_tags.append(statement)
+                    opened_tags.append((statement, directive))
                 else:
-                    closing_tags[id(opened_tags.pop())] = statement
+                    opening_statement, opening_directive = opened_tags.pop()
+                    assert directive == opening_directive, (
+                        "Wrong pairing tags between '%s' and '%s'"
+                        % (opening_statement.text.encode('utf-8'),
+                           statement.text.encode('utf-8')))
+                    closing_tags[id(opening_statement)] = statement
             # - we only need to return opening statements
             if is_opening:
                 r_statements.append((statement,
