@@ -31,7 +31,8 @@ from genshi.core import PI
 from genshi.template.eval import UndefinedError
 
 from relatorio.templates.opendocument import Template, GENSHI_EXPR,\
-    GENSHI_URI, RELATORIO_URI, fod2od, remove_node_keeping_tail
+    GENSHI_URI, RELATORIO_URI, fod2od, remove_node_keeping_tail, \
+    escape_xml_invalid_chars
 
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 
@@ -100,7 +101,8 @@ class TestOOTemplating(unittest.TestCase):
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         child = root_interpolated[0]
         self.assertEqual(
-            child.get('{http://genshi.edgewall.org/}replace'), 'foo')
+            child.get('{http://genshi.edgewall.org/}replace'),
+            '__relatorio_escape_invalid_chars(foo)')
 
     def test_column_looping(self):
         xml = b'''
@@ -412,3 +414,23 @@ class TestRemoveNodeKeepingTail(unittest.TestCase):
         self.assertEqual(
             lxml.etree.tostring(tree),
             b'''<parent><previous/>tailtail</parent>''')
+
+
+class TestEscapeXMLInvalidChars(unittest.TestCase):
+
+    def test_valid(self):
+        "Test escape valid"
+        self.assertEqual(escape_xml_invalid_chars("foo"), "foo")
+
+    def test_valid_control(self):
+        "Test escape valid control"
+        self.assertEqual(escape_xml_invalid_chars("foo \x09"), "foo \x09")
+
+    def test_invalid(self):
+        "Test escape invalid"
+        self.assertEqual(escape_xml_invalid_chars("foo \x00 bar"), "foo   bar")
+
+    def test_replacement(self):
+        "Test replacement"
+        self.assertEqual(
+            escape_xml_invalid_chars("foo \x00 bar", "?"), "foo ? bar")

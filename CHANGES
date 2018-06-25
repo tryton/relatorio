@@ -1,3 +1,4 @@
+* Escape invalid XML characters
 * Enforce closing tag to be the same directive as the opening
 * Use compression for zip file
 * Write mimetype as first file of the zip file

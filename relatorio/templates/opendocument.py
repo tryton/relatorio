@@ -83,6 +83,9 @@ META = 'meta.xml'
 THUMBNAILS = 'Thumbnails'
 output_encode = genshi.output.encode
 EtreeElement = lxml.etree.Element
+XML_INVALID_CHAR_EXPR = re.compile(
+    # from https://www.w3.org/TR/REC-xml/#charsets
+    u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
 # A note regarding OpenDocument namespaces:
 #
@@ -243,6 +246,14 @@ def update_py_attrs(node, value):
         node.attrib[py_attrs_attr] = \
                 "(lambda x, y: x.update(y) or x)(%s or {}, %s or {})" % \
                 (node.attrib[py_attrs_attr], value)
+
+
+def escape_xml_invalid_chars(value, repl=' '):
+    "Replace invalid characters for XML."
+    if isinstance(value, basestring):
+        return XML_INVALID_CHAR_EXPR.sub(repl, value)
+    else:
+        return value
 
 
 class Template(MarkupTemplate):
@@ -531,7 +542,8 @@ class Template(MarkupTemplate):
                 if (grand_parent is None
                         or grand_parent.tag != table_cell_tag
                         ) or len(grand_parent) != 1 or has_style(parent):
-                    r_node.attrib[py_replace] = expr
+                    r_node.attrib[py_replace] = (
+                        '__relatorio_escape_invalid_chars(%s)' % expr)
                     continue
 
                 cache_id = id(r_node)
@@ -795,6 +807,7 @@ class Template(MarkupTemplate):
             type_ = 'float'
         elif isinstance(val, basestring):
             type_ = 'string'
+            val = escape_xml_invalid_chars(val)
         elif isinstance(val, datetime.timedelta):
             type_ = 'time'
             val = 'P%sD%sS' % (val.days, val.seconds)
@@ -815,6 +828,7 @@ class Template(MarkupTemplate):
                                                     kwargs)
         kwargs['__relatorio_make_dimension'] = ImageDimension(self.namespaces)
         kwargs['__relatorio_guess_type'] = self._guess_type
+        kwargs['__relatorio_escape_invalid_chars'] = escape_xml_invalid_chars
 
         counter = ColumnCounter()
         kwargs['__relatorio_reset_col_count'] = counter.reset
