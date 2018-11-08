@@ -1,3 +1,4 @@
+from __future__ import print_function
 import relatorio
 from common import Invoice, inv
 from os.path import join, dirname
@@ -25,8 +26,8 @@ if __name__ == '__main__':
                              ('pivot', '.ods'),
                              ('presentation', '.odp')):
         filename = 'output_%s%s' % (report_name, ext)
-        print "generating '%s'..." % filename,
+        print("generating '%s'..." % filename, end='')
         report, mimetype, desc = repository.by_id(Invoice, report_name)
         data = report(o=inv).render().getvalue()
         open(join(dirname(__file__), filename), 'wb').write(data)
-        print "done"
+        print("done")
