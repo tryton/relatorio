@@ -1,3 +1,5 @@
+* Write opendocument stream directly to the ZipFile
+
 0.8.1 - 20180930
 * Add support for Python 3.7
 * Escape invalid XML characters

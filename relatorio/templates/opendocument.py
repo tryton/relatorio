@@ -28,6 +28,7 @@ except ImportError:
 
 import base64
 import mimetypes
+import sys
 import time
 import urllib
 import zipfile
@@ -114,9 +115,8 @@ class OOTemplateError(genshi.template.base.TemplateSyntaxError):
 class ImageHref:
     "A class used to add images in the odf zipfile"
 
-    def __init__(self, zfile, manifest, context):
-        self.zip = zfile
-        self.manifest = manifest
+    def __init__(self, serializer, context):
+        self.serializer = serializer
         self.context = context.copy()
 
     def __call__(self, expr):
@@ -132,9 +132,7 @@ class ImageHref:
         name = md5(file_content).hexdigest()
         path = 'Pictures/%s%s' % (
             name, mimetypes.guess_extension(mimetype))
-        if path not in self.zip.namelist():
-            self.zip.writestr(path, file_content)
-            self.manifest.add_file_entry(path, mimetype)
+        self.serializer.add_file(path, file_content, mimetype)
         return {'{http://www.w3.org/1999/xlink}href': path}
 
 
@@ -264,6 +262,7 @@ class Template(MarkupTemplate):
         self.inner_docs = []
         self.has_col_loop = False
         self._source = None
+        self._files = set()
         super(Template, self).__init__(source, filepath, filename, loader,
                                        encoding, lookup, allow_exec)
 
@@ -312,6 +311,7 @@ class Template(MarkupTemplate):
 
         parsed = []
         for fpath, fparsed in content_files + styles_files:
+            self._files.add(fpath)
             parsed.append((genshi.core.PI, ('relatorio', fpath), None))
             parsed += fparsed
 
@@ -822,10 +822,8 @@ class Template(MarkupTemplate):
 
     def generate(self, *args, **kwargs):
         "creates the RelatorioStream."
-        serializer = OOSerializer(self._source)
-        kwargs['__relatorio_make_href'] = ImageHref(serializer.outzip,
-                                                    serializer.manifest,
-                                                    kwargs)
+        serializer = OOSerializer(self._source, self._files)
+        kwargs['__relatorio_make_href'] = ImageHref(serializer, kwargs)
         kwargs['__relatorio_make_dimension'] = ImageDimension(self.namespaces)
         kwargs['__relatorio_guess_type'] = self._guess_type
         kwargs['__relatorio_escape_invalid_chars'] = escape_xml_invalid_chars
@@ -848,6 +846,7 @@ class Template(MarkupTemplate):
             col_filter = Transformer('//repeat[namespace-uri()="%s"]'
                                      % RELATORIO_URI)
             col_filter = col_filter.apply(transformation)
+            # Must consume the stream to fill counter
             stream = Stream(list(stream), self.serializer) | col_filter
         return RelatorioStream(stream, serializer)
 
@@ -1041,9 +1040,85 @@ class Meta(object):
         return val
 
 
+class _AbstractZipWriteSplitStream(object):
+    def __init__(self, zipfile, chunksize=64):
+        self.zipfile = zipfile
+        self.chunksize = chunksize
+
+    def open(self, zinfo):
+        raise NotImplementedError
+
+    def close(self):
+        raise NotImplementedError
+
+    def __call__(self, stream):
+        for kind, data, pos in stream:
+            if kind == genshi.core.PI and data[0] == 'relatorio':
+                self.open(data[1])
+                continue
+            yield kind, data, pos
+        self.close()
+
+    def write(self, data):
+        raise NotImplementedError
+
+
+if sys.version_info >= (3, 6):
+    class _ZipWriteSplitStream(_AbstractZipWriteSplitStream):
+        def __init__(self, *args, **kwargs):
+            super(_ZipWriteSplitStream, self).__init__(*args, **kwargs)
+            self._fp = None
+            self._buffer = []
+            self._zinfo = None
+
+        def open(self, zinfo):
+            if self._fp:
+                self.close()
+            self._zinfo = zinfo
+            self._fp = None
+
+        def close(self):
+            self.flush()
+            self._fp.close()
+            self._zinfo = None
+            self._fp = None
+
+        def write(self, data):
+            self._buffer.append(data)
+            if len(self._buffer) > self.chunksize:
+                self.flush()
+
+        def flush(self):
+            if not self._fp:
+                self._fp = self.zipfile.open(self._zinfo, mode='w')
+            self._fp.write(b''.join(self._buffer))
+            self._buffer.clear()
+else:
+    class _ZipWriteSplitStream(_AbstractZipWriteSplitStream):
+        def __init__(self, *args, **kwargs):
+            super(_ZipWriteSplitStream, self).__init__(*args, **kwargs)
+            self._fp = None
+            self._zinfo = None
+
+        def open(self, zinfo):
+            if self._fp:
+                self.close()
+            self._zinfo = zinfo
+            self._fp = BytesIO()
+
+        def close(self):
+            self._fp.seek(0)
+            self.zipfile.writestr(self._zinfo, self._fp.read())
+            self._zinfo = None
+            self._fp = None
+
+        def write(self, data):
+            self._fp.write(data)
+
+
 class OOSerializer:
 
-    def __init__(self, source):
+    def __init__(self, source, files, chunksize=64):
         self.inzip = get_zip_file(source)
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.meta = Meta(self.inzip.read(META))
@@ -1051,30 +1126,24 @@ class OOSerializer:
         self.outzip = zipfile.ZipFile(
             self.new_oo, mode='w', compression=zipfile.ZIP_DEFLATED)
         self.xml_serializer = genshi.output.XMLSerializer()
+        self._files = files
+        self.chunksize = chunksize
+        self._deferred = []
 
     def __call__(self, stream):
         files = {}
-        for kind, data, pos in stream:
-            if kind == genshi.core.PI and data[0] == 'relatorio':
-                stream_for = data[1]
-                continue
-            files.setdefault(stream_for, []).append((kind, data, pos))
-
         now = time.localtime()[:6]
         manifest_info = None
         for f_info in self.inzip.infolist():
             if f_info.filename.startswith('ObjectReplacements'):
                 continue
-            elif f_info.filename in files:
-                stream = files[f_info.filename]
+            elif f_info.filename in self._files:
                 # create a new file descriptor, copying some attributes from
                 # the original file
                 new_info = zipfile.ZipInfo(f_info.filename, now)
                 for attr in ('compress_type', 'flag_bits', 'create_system'):
                     setattr(new_info, attr, getattr(f_info, attr))
-                serialized_stream = output_encode(self.xml_serializer(stream),
-                    encoding='utf-8')
-                self.outzip.writestr(new_info, serialized_stream)
+                files[f_info.filename] = new_info
             elif f_info.filename == MANIFEST:
                 manifest_info = f_info
             elif f_info.filename == META:
@@ -1083,6 +1152,13 @@ class OOSerializer:
                 self.manifest.remove_file_entry(f_info.filename)
             else:
                 self.outzip.writestr(f_info, self.inzip.read(f_info.filename))
+
+        writer = _ZipWriteSplitStream(self.outzip, self.chunksize)
+        output_encode(
+            self.xml_serializer(writer(stream)), encoding='utf-8', out=writer)
+
+        for args in self._deferred:
+            self.add_file(*args)
         self.manifest.remove_file_entry(THUMBNAILS + '/')
         if manifest_info:
             self.outzip.writestr(manifest_info, str(self.manifest))
@@ -1090,5 +1166,14 @@ class OOSerializer:
         self.outzip.close()
 
         return self.new_oo
+
+    def add_file(self, path, content, mimetype):
+        if path not in self.outzip.namelist():
+            try:
+                self.outzip.writestr(path, content)
+                self.manifest.add_file_entry(path, mimetype)
+            except ValueError:
+                self._deferred.append((path, content, mimetype))
+
 
 MIMETemplateLoader.add_factory('oo.org', Template)
