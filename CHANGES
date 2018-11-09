@@ -1,3 +1,4 @@
+* Support out parameter of render
 * Write opendocument stream directly to the ZipFile
 
 0.8.1 - 20180930

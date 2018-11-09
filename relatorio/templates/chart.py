@@ -68,10 +68,13 @@ class CairoSerializer:
     def __init__(self):
         self.text_serializer = genshi.output.TextSerializer()
 
-    def __call__(self, stream):
+    def __call__(self, stream, method=None, encoding='utf-8', out=None):
         if not PYCHA_TYPE:
             raise NotImplementedError
-        result = BytesIO()
+        if out is None:
+            result = BytesIO()
+        else:
+            result = out
         yml = StringIO(_encode(self.text_serializer(stream)))
         chart_yaml = yaml.load(yml.read())
         chart_info = chart_yaml['chart']
@@ -95,6 +98,8 @@ class CairoSerializer:
         elif chart_type == 'svg':
             surface.finish()
 
-        return result
+        if out is None:
+            return result
+
 
 MIMETemplateLoader.add_factory('chart', Template, Template.id_function)

@@ -71,6 +71,5 @@ if __name__ == '__main__':
     # Big document
     print("generating output_big.odt... ", end='')
     report = Report(abspath(join(pwd, 'big.odt')), ODT_MIME)
-    content = report().render().getvalue()
-    open(join(pwd, 'output_big.odt'), 'wb').write(content)
+    content = report().render(out=open(join(pwd, 'output_big.odt'), 'wb'))
     print("done")

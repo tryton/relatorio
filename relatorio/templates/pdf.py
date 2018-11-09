@@ -48,23 +48,30 @@ class Template(NewTextTemplate):
 class PDFSerializer:
 
     def __init__(self):
-        self.working_dir = tempfile.mkdtemp(prefix='relatorio')
-        self.tex_file = os.path.join(self.working_dir, 'report.tex')
-        self.pdf_file = os.path.join(self.working_dir, 'report.pdf')
         self.text_serializer = genshi.output.TextSerializer()
 
-    def __call__(self, stream):
-        tex_file = open(self.tex_file, 'w')
-        tex_file.write(_encode(self.text_serializer(stream)))
-        tex_file.close()
+    def __call__(self, stream, method=None, encoding='utf-8', out=None):
+        if out is None:
+            result = BytesIO()
+        else:
+            result = out
+        working_dir = tempfile.mkdtemp(prefix='relatorio')
+        tex_file = os.path.join(working_dir, 'report.tex')
+        pdf_file = os.path.join(working_dir, 'report.pdf')
+
+        with open(tex_file, 'w') as fp:
+            fp.write(_encode(self.text_serializer(stream)))
 
         subprocess.check_call([TEXEXEC, '--purge', 'report.tex'],
-                              cwd=self.working_dir)
+                              cwd=working_dir)
 
-        pdf = BytesIO()
-        pdf.write(open(self.pdf_file, 'r').read())
+        with open(pdf_file, 'r') as fp:
+            result.write(fp.read())
 
-        shutil.rmtree(self.working_dir, ignore_errors=True)
-        return pdf
+        shutil.rmtree(working_dir, ignore_errors=True)
+
+        if out is None:
+            return result
+
 
 MIMETemplateLoader.add_factory('pdf', Template)

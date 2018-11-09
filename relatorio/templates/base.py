@@ -31,7 +31,8 @@ class RelatorioStream(genshi.core.Stream):
 
     def render(self, method=None, encoding='utf-8', out=None, **kwargs):
         "calls the serializer to render the template"
-        return self.serializer(self.events)
+        return self.serializer(
+            self.events, method=method, encoding=encoding, out=out)
 
     def serialize(self, method='xml', **kwargs):
         "generates the bitstream corresponding to the template"

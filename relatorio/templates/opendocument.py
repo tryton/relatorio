@@ -1122,15 +1122,20 @@ class OOSerializer:
         self.inzip = get_zip_file(source)
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.meta = Meta(self.inzip.read(META))
-        self.new_oo = BytesIO()
-        self.outzip = zipfile.ZipFile(
-            self.new_oo, mode='w', compression=zipfile.ZIP_DEFLATED)
         self.xml_serializer = genshi.output.XMLSerializer()
         self._files = files
         self.chunksize = chunksize
-        self._deferred = []
+        self.outzip = None
+        self._deferred = None
 
-    def __call__(self, stream):
+    def __call__(self, stream, method=None, encoding='utf-8', out=None):
+        if out is None:
+            result = BytesIO()
+        else:
+            result = out
+        self.outzip = zipfile.ZipFile(
+            result, mode='w', compression=zipfile.ZIP_DEFLATED)
+        self._deferred = []
         files = {}
         now = time.localtime()[:6]
         manifest_info = None
@@ -1155,7 +1160,7 @@ class OOSerializer:
 
         writer = _ZipWriteSplitStream(self.outzip, self.chunksize)
         output_encode(
-            self.xml_serializer(writer(stream)), encoding='utf-8', out=writer)
+            self.xml_serializer(writer(stream)), encoding=encoding, out=writer)
 
         for args in self._deferred:
             self.add_file(*args)
@@ -1165,10 +1170,11 @@ class OOSerializer:
         self.inzip.close()
         self.outzip.close()
 
-        return self.new_oo
+        if out is None:
+            return result
 
     def add_file(self, path, content, mimetype):
-        if path not in self.outzip.namelist():
+        if self.outzip and path not in self.outzip.namelist():
             try:
                 self.outzip.writestr(path, content)
                 self.manifest.add_file_entry(path, mimetype)
