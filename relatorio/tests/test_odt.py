@@ -230,6 +230,49 @@ class TestOOTemplating(unittest.TestCase):
         self.assertTrue(last_row_node.get("value")
                         .startswith('__relatorio_store_col_count'))
 
+    @unittest.skipIf(
+        not getattr(unittest.TestCase, 'assertWarnsRegex', None),
+        "assertWarns not supported")
+    def test_statement_no_text_warning(self):
+        "Test warning for missing statement text"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
+                    <text:a xlink:href="relatorio://content:foo"></text:a>
+                  </xml>'''
+
+        with self.assertWarnsRegex(
+                UserWarning, r"No statement text in '.*' for 'content:foo'"):
+            self.oot.insert_directives(xml)
+
+    @unittest.skipIf(
+        not getattr(unittest.TestCase, 'assertWarnsRegex', None),
+        "assertWarns not supported")
+    def test_statement_missmatch_text_warning(self):
+        "Test warning for missing statement text"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
+                    <text:a xlink:href="relatorio://content:foo">content:bar</text:a>
+                  </xml>'''
+
+        with self.assertWarnsRegex(
+                UserWarning,
+                r"url and text do not match in .*: "
+                "content:foo != content:bar"):
+            self.oot.insert_directives(xml)
+
+    @unittest.skipIf(
+        not getattr(unittest.TestCase, 'assertWarnsRegex', None),
+        "assertWarns not supported")
+    def test_statement_text_warning_closing(self):
+        "Test warning for statement text in closing"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
+                    <text:a xlink:href="relatorio://with foo='test'">with foo='test'</text:a>
+                    <text:a xlink:href="relatorio:///with"></text:a>
+                  </xml>'''
+
+        with self.assertWarnsRegex(
+                UserWarning,
+                r".* corresponding to opening tag 'with foo='test'"):
+            self.oot.insert_directives(xml)
+
     def test_text_outside_p(self):
         "Testing that the tail text of a directive node is handled properly"
         xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">

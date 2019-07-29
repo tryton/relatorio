@@ -408,12 +408,11 @@ class Template(MarkupTemplate):
                            % (self.filepath, expr)
             elif expr != statement.text and statement.tag == text_a:
                 warn_msg = "url and text do not match in %s: %s != %s" \
-                           % (self.filepath, expr,
-                              statement.text.encode('utf-8'))
+                           % (self.filepath, expr, statement.text)
             if warn_msg:
                 if directive is not None and not is_opening:
                     warn_msg += " corresponding to opening tag '%s'" \
-                                % opened_tags[-1].text
+                                % opened_tags[-1][0].text
                 warnings.warn(warn_msg)
 
             if directive in GENSHI_CLOSING_DIRECTIVE:
