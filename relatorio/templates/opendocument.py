@@ -950,7 +950,11 @@ def extract_images(child, namespaces, start=0):
         binary_data, = image.xpath(
             './office:binary-data', namespaces=namespaces)
         data = base64.b64decode(binary_data.text)
-        mime_type = magic.from_buffer(data, mime=True)
+        if hasattr(magic, 'from_buffer'):
+            mime_type = magic.from_buffer(data, mime=True)
+        else:
+            # Not python-magic but file-magic
+            mime_type = magic.detect_from_content(data).mime_type
         name = 'Pictures/image%s%s' % (
             i, mimetypes.guess_extension(mime_type))
         image.remove(binary_data)
