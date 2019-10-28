@@ -1075,7 +1075,7 @@ if sys.version_info >= (3, 6):
             self._zinfo = None
 
         def open(self, zinfo):
-            if self._fp:
+            if self._fp or self._buffer:
                 self.close()
             self._zinfo = zinfo
             self._fp = None
