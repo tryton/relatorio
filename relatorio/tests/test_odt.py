@@ -104,6 +104,92 @@ class TestOOTemplating(unittest.TestCase):
             child.get('{http://genshi.edgewall.org/}replace'),
             '__relatorio_escape_invalid_chars(foo)')
 
+    @unittest.skipIf(
+        not hasattr(unittest.TestCase, 'assertRegex'),
+        'assertRegex not supported')
+    def test_directives_in_cell(self):
+        "Testing the guess type of directive inside cell"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:table="urn:table" xmlns:xlink="urn:xlink">
+                    <table:table-cell>
+                        <text:p>
+                            <text:a xlink:href="relatorio://foo">foo</text:a>
+                        </text:p>
+                    </table:table-cell>
+                 </xml>'''
+        interpolated = self.oot.insert_directives(xml)
+        root_interpolated = lxml.etree.parse(interpolated).getroot()
+        cell = root_interpolated[0]
+        self.assertRegex(
+            cell.get('{http://genshi.edgewall.org/}attrs'),
+            '__relatorio_guess_type\(__relatorio_store_cache\([0-9]*, foo\)\)')
+        child = cell[0][0]
+        self.assertRegex(
+            child.get('{http://genshi.edgewall.org/}replace'),
+            '__relatorio_get_cache\([0-9]*\)')
+
+    def test_directives_in_cell_with_children(self):
+        "Testing directive inside cell with children"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:table="urn:table" xmlns:xlink="urn:xlink">
+                    <table:table-cell>
+                        <text:p>
+                            <text:a xlink:href="relatorio://foo">foo</text:a>
+                        </text:p>
+                        <text:p>bar</text:p>
+                    </table:table-cell>
+                 </xml>'''
+        interpolated = self.oot.insert_directives(xml)
+        root_interpolated = lxml.etree.parse(interpolated).getroot()
+        cell = root_interpolated[0]
+        self.assertEqual(len(cell), 2)
+        self.assertFalse(
+            cell.get('{http://genshi.edgewall.org/}attrs'))
+        child = cell[0][0]
+        self.assertEqual(
+            child.get('{http://genshi.edgewall.org/}replace'),
+            '__relatorio_escape_invalid_chars(foo)')
+
+    def test_directives_in_cell_with_text(self):
+        "Testing directive inside cell with text"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:table="urn:table" xmlns:xlink="urn:xlink">
+                    <table:table-cell>
+                        <text:p>
+                            bar
+                            <text:a xlink:href="relatorio://foo">foo</text:a>
+                        </text:p>
+                    </table:table-cell>
+                 </xml>'''
+        interpolated = self.oot.insert_directives(xml)
+        root_interpolated = lxml.etree.parse(interpolated).getroot()
+        cell = root_interpolated[0]
+        self.assertEqual(len(cell), 1)
+        self.assertFalse(
+            cell.get('{http://genshi.edgewall.org/}attrs'))
+        child = cell[0][0]
+        self.assertEqual(
+            child.get('{http://genshi.edgewall.org/}replace'),
+            '__relatorio_escape_invalid_chars(foo)')
+
+    def test_directives_in_cell_with_tail(self):
+        "Testing directive inside cell with text"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:table="urn:table" xmlns:xlink="urn:xlink">
+                    <table:table-cell>
+                        <text:p>
+                            <text:a xlink:href="relatorio://foo">foo</text:a>
+                            bar
+                        </text:p>
+                    </table:table-cell>
+                 </xml>'''
+        interpolated = self.oot.insert_directives(xml)
+        root_interpolated = lxml.etree.parse(interpolated).getroot()
+        cell = root_interpolated[0]
+        self.assertEqual(len(cell), 1)
+        self.assertFalse(
+            cell.get('{http://genshi.edgewall.org/}attrs'))
+        child = cell[0][0]
+        self.assertEqual(
+            child.get('{http://genshi.edgewall.org/}replace'),
+            '__relatorio_escape_invalid_chars(foo)')
+
     def test_column_looping(self):
         xml = b'''
 <table:table

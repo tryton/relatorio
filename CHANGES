@@ -1,3 +1,4 @@
+* Do not guess type of cell if directive is not alone
 * Add support for Python 3.8
 * Support file-magic as fallback to python-magic
 

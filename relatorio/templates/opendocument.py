@@ -538,9 +538,13 @@ class Template(MarkupTemplate):
                 grand_parent = parent.getparent()
                 # Guess type only if it is the only value in the cell
                 # and its parent has no style
-                if (grand_parent is None
-                        or grand_parent.tag != table_cell_tag
-                        ) or len(grand_parent) != 1 or has_style(parent):
+                if ((grand_parent is None
+                            or grand_parent.tag != table_cell_tag)
+                        or len(grand_parent) != 1
+                        or len(parent) != 1
+                        or (parent.text and parent.text.strip())
+                        or (r_node.tail and r_node.tail.strip())
+                        or has_style(parent)):
                     r_node.attrib[py_replace] = (
                         '__relatorio_escape_invalid_chars(%s)' % expr)
                     continue
