@@ -1,8 +1,5 @@
-include AUTHORS
-include CHANGES
 include LICENSE
+include COPYRIGHT
+include README
+include CHANGELOG
 include doc/*
-include relatorio/tests/*.jpg
-include relatorio/tests/*.odt
-include relatorio/tests/*.png
-include relatorio/tests/templates/*.tmpl

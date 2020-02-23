@@ -14,15 +14,22 @@ def get_version():
                              '__init__.py')).read()
     return re.search(r"""__version__ = '([0-9.]*)'""", init).group(1)
 
+
 setup(
     name="relatorio",
-    url="http://relatorio.tryton.org/",
-    author="Nicolas Evrard",
-    author_email="nicolas.evrard@b2ck.com",
-    maintainer="Cedric Krier",
-    maintainer_email="cedric.krier@b2ck.com",
     description="A templating library able to output odt and pdf files",
     long_description=read('README'),
+    author='Tryton',
+    author_email='relatorio@tryton.org',
+    url='https://pypi.python.org/pypi/relatorio',
+    download_url='https://downloads.tryton.org/relatorio/',
+    project_urls={
+        "Bug Tracker": 'https://relatorio.tryton.org/',
+        "Documentation": 'https://relatorio.readthedocs.org/',
+        "Forum": 'https://discuss.tryton.org/tags/relatorio',
+        "Source Code": 'https://hg.tryton.org/relatorio/',
+        },
+    keywords='templating OpenDocument PDF',
     license="GPL License",
     version=get_version(),
     packages=find_packages(exclude=['examples']),
