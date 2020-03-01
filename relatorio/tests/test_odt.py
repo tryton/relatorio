@@ -34,6 +34,11 @@ from relatorio.templates.opendocument import Template, GENSHI_EXPR,\
     GENSHI_URI, RELATORIO_URI, fod2od, remove_node_keeping_tail, \
     escape_xml_invalid_chars
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 
 
@@ -121,11 +126,12 @@ class TestOOTemplating(unittest.TestCase):
         cell = root_interpolated[0]
         self.assertRegex(
             cell.get('{http://genshi.edgewall.org/}attrs'),
-            '__relatorio_guess_type\(__relatorio_store_cache\([0-9]*, foo\)\)')
+            r'__relatorio_guess_type\(__relatorio_store_cache\([0-9]*, foo\)\)'
+            )
         child = cell[0][0]
         self.assertRegex(
             child.get('{http://genshi.edgewall.org/}replace'),
-            '__relatorio_get_cache\([0-9]*\)')
+            r'__relatorio_get_cache\([0-9]*\)')
 
     def test_directives_in_cell_with_children(self):
         "Testing directive inside cell with children"
@@ -292,7 +298,7 @@ class TestOOTemplating(unittest.TestCase):
         <table:covered-table-cell/>
         <table:covered-table-cell/>
     </table:table-row>
-</table:table>'''
+</table:table>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root = lxml.etree.parse(interpolated).getroot()
         child2 = root[1]
@@ -336,7 +342,7 @@ class TestOOTemplating(unittest.TestCase):
         "Test warning for missing statement text"
         xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
                     <text:a xlink:href="relatorio://content:foo">content:bar</text:a>
-                  </xml>'''
+                  </xml>'''  # noqa: E501
 
         with self.assertWarnsRegex(
                 UserWarning,
@@ -352,7 +358,7 @@ class TestOOTemplating(unittest.TestCase):
         xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
                     <text:a xlink:href="relatorio://with foo='test'">with foo='test'</text:a>
                     <text:a xlink:href="relatorio:///with"></text:a>
-                  </xml>'''
+                  </xml>'''  # noqa: E501
 
         with self.assertWarnsRegex(
                 UserWarning,
@@ -368,7 +374,7 @@ class TestOOTemplating(unittest.TestCase):
                     zzz
                     <text:a xlink:href="relatorio:///if">/if</text:a>
                     aaa
-                 </xml>'''
+                 </xml>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         child = root_interpolated[0]

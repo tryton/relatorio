@@ -42,6 +42,7 @@ def main():
     runner = unittest.TextTestRunner()
     runner.run(suite)
 
+
 if __name__ == '__main__':
     sys.path.insert(0, os.path.dirname(os.path.dirname(
                 os.path.dirname(os.path.abspath(__file__)))))

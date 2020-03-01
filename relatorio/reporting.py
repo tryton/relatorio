@@ -87,6 +87,7 @@ class MIMETemplateLoader(TemplateLoader):
         if id_function is not None:
             cls.mime_func.append(id_function)
 
+
 default_loader = MIMETemplateLoader(auto_reload=True)
 
 
@@ -101,6 +102,7 @@ class DefaultFactory:
     def __call__(self, **kwargs):
         data = kwargs.copy()
         return data
+
 
 default_factory = DefaultFactory()
 

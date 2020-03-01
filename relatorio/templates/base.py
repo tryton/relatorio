@@ -42,5 +42,6 @@ class RelatorioStream(genshi.core.Stream):
         "Support for the bitwise operator"
         return RelatorioStream(self.events | function, self.serializer)
 
+
 MIMETemplateLoader.add_factory('text', NewTextTemplate)
 MIMETemplateLoader.add_factory('markup', MarkupTemplate)

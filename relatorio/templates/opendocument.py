@@ -57,6 +57,15 @@ try:
 except ImportError:
     ChartTemplate = type(None)
 
+try:
+    basestring
+except NameError:
+    basestring = str
+try:
+    long
+except NameError:
+    long = int
+
 __metaclass__ = type
 warnings.filterwarnings('always', module='relatorio.templates.opendocument')
 
@@ -538,7 +547,8 @@ class Template(MarkupTemplate):
                 grand_parent = parent.getparent()
                 # Guess type only if it is the only value in the cell
                 # and its parent has no style
-                if ((grand_parent is None
+                if ((
+                            grand_parent is None
                             or grand_parent.tag != table_cell_tag)
                         or len(grand_parent) != 1
                         or len(parent) != 1
