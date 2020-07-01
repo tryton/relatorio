@@ -770,7 +770,7 @@ class Template(MarkupTemplate):
             width = draw.attrib.pop(svg_width, '')
             height = draw.attrib.pop(svg_height, '')
             attr_expr = ("__relatorio_make_dimension("
-                         "__relatorio_store_cache(%s, %s), '%s', '%s')" %
+                         "__relatorio_store_cache(%s, (%s)), '%s', '%s')" %
                          (cache_id, d_name, width, height))
             draw.attrib[py_attrs] = attr_expr
             draw.attrib.pop(draw_name)

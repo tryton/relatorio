@@ -1,3 +1,5 @@
+* Support draw name tuple without parenthesis
+
 0.9.1 - 20200126
 * Do not guess type of cell if directive is not alone
 * Add support for Python 3.8

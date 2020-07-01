@@ -425,22 +425,24 @@ class TestOOTemplating(unittest.TestCase):
         tree = lxml.etree.parse(StringIO(rendered[25:styles_idx]))
         root = tree.getroot()
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
-        self.assertEqual(len(images), 3)
+        self.assertEqual(len(images), 4)
         self.assertFalse(
             images[0].get('{%s}name' % self.oot.namespaces['draw']))
+        self.assertFalse(
+            images[1].get('{%s}name' % self.oot.namespaces['draw']))
         self.assertEqual(
-            images[1].get('{%s}name' % self.oot.namespaces['draw']), 'One')
+            images[2].get('{%s}name' % self.oot.namespaces['draw']), 'One')
         self.assertEqual(
-            images[2].get('{%s}name' % self.oot.namespaces['draw']), 'Two')
+            images[3].get('{%s}name' % self.oot.namespaces['draw']), 'Two')
         self.assertEqual(
-            images[1].get('{%s}width' % self.oot.namespaces['svg']), '1.732cm')
-        self.assertEqual(
-            images[1].get('{%s}height' % self.oot.namespaces['svg']),
-            '1.513cm')
-        self.assertEqual(
-            images[2].get('{%s}width' % self.oot.namespaces['svg']), '2cm')
+            images[2].get('{%s}width' % self.oot.namespaces['svg']), '1.732cm')
         self.assertEqual(
             images[2].get('{%s}height' % self.oot.namespaces['svg']),
+            '1.513cm')
+        self.assertEqual(
+            images[3].get('{%s}width' % self.oot.namespaces['svg']), '2cm')
+        self.assertEqual(
+            images[3].get('{%s}height' % self.oot.namespaces['svg']),
             '2.2cm')
 
     def test_regexp(self):
