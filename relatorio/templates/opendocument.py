@@ -55,7 +55,7 @@ from relatorio.reporting import Report, MIMETemplateLoader
 try:
     from relatorio.templates.chart import Template as ChartTemplate
 except ImportError:
-    ChartTemplate = type(None)
+    ChartTemplate = None
 
 try:
     basestring
@@ -132,15 +132,18 @@ class ImageHref:
         bitstream, mimetype = expr[:2]
         if isinstance(bitstream, Report):
             bitstream = bitstream(**self.context).render()
-        elif isinstance(bitstream, ChartTemplate):
+        elif ChartTemplate and isinstance(bitstream, ChartTemplate):
             bitstream = bitstream.generate(**self.context).render()
         elif not hasattr(bitstream, 'seek') or not hasattr(bitstream, 'read'):
             bitstream = BytesIO(bitstream)
-        bitstream.seek(0)
-        file_content = bitstream.read()
+        if bitstream:
+            bitstream.seek(0)
+            file_content = bitstream.read()
+        else:
+            file_content = b''
         name = md5(file_content).hexdigest()
         path = 'Pictures/%s%s' % (
-            name, mimetypes.guess_extension(mimetype))
+            name, mimetypes.guess_extension(mimetype or '') or '')
         self.serializer.add_file(path, file_content, mimetype)
         return {'{http://www.w3.org/1999/xlink}href': path}
 

@@ -79,14 +79,16 @@ class TestOOTemplating(unittest.TestCase):
                      'images': [(open(os.path.join(thisdir, 'one.jpg'), 'rb'),
                                  'image/jpeg', None, None, 'One'),
                                 (open(os.path.join(thisdir, 'two.png'), 'rb'),
-                                 'image/png', '2cm', '2.2cm', 'Two')],
+                                 'image/png', '2cm', '2.2cm', 'Two'),
+                                (None, None)],
                      'oeuf': open(os.path.join(thisdir, 'egg.jpg'), 'rb'),
                      'footer': u'We sell stuff'}
 
     def tearDown(self):
         self._source.close()
         for image in self.data['images']:
-            image[0].close()
+            if image[0]:
+                image[0].close()
         self.data['oeuf'].close()
 
     def test_init(self):
@@ -425,7 +427,7 @@ class TestOOTemplating(unittest.TestCase):
         tree = lxml.etree.parse(StringIO(rendered[25:styles_idx]))
         root = tree.getroot()
         images = root.xpath('//draw:frame', namespaces=self.oot.namespaces)
-        self.assertEqual(len(images), 4)
+        self.assertEqual(len(images), 5)
         self.assertFalse(
             images[0].get('{%s}name' % self.oot.namespaces['draw']))
         self.assertFalse(
