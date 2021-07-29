@@ -62,7 +62,10 @@ class TestOOTemplating(unittest.TestCase):
                                  'image/png', '2cm', '2.2cm', 'Two'),
                                 (None, None)],
                      'oeuf': open(os.path.join(thisdir, 'egg.jpg'), 'rb'),
-                     'footer': u'We sell stuff'}
+                     'footer': u'We sell stuff',
+                     'salutation': 'Greating',
+                     'title': 'Testing Letter',
+                     }
 
     def tearDown(self):
         self._source.close()
@@ -375,6 +378,13 @@ class TestOOTemplating(unittest.TestCase):
         stream = self.oot.generate(**dico)
         self.assertRaises(UndefinedError,
             lambda: stream.events.render(encoding='utf-8'))
+
+    def test_meta(self):
+        "Testing that meta get rendered"
+        stream = self.oot.generate(**self.data)
+        rendered = stream_to_string(stream.events.render(encoding='utf-8'))
+        self.assertTrue("Greating" in rendered)
+        self.assertTrue("Testing Letter" in rendered)
 
     def test_generate(self):
         "Testing that content get rendered"

@@ -251,7 +251,16 @@ class Template(MarkupTemplate):
 
     def __init__(self, source, filepath=None, filename=None, loader=None,
                  encoding=None, lookup='strict', allow_exec=True):
-        self.namespaces = {}
+        # assign default/fake namespaces so that documents do not need to
+        # define them if they don't use them
+        self.namespaces = {
+            "text": "urn:text",
+            "draw": "urn:draw",
+            "table": "urn:table",
+            "office": "urn:office",
+            "xlink": "urn:xlink",
+            "svg": "urn:svg",
+        }
         self.inner_docs = []
         self.has_col_loop = False
         self._source = None
@@ -281,29 +290,37 @@ class Template(MarkupTemplate):
         zf = get_zip_file(source)
         content = zf.read('content.xml')
         styles = zf.read('styles.xml')
+        meta = zf.read('meta.xml')
 
         template = super(Template, self)
         content = template._parse(self.insert_directives(content), encoding)
         styles = template._parse(self.insert_directives(styles), encoding)
+        meta = template._parse(self.insert_directives(meta), encoding)
         content_files = [('content.xml', content)]
         styles_files = [('styles.xml', styles)]
+        meta_files = [('meta.xml', meta)]
 
         while self.inner_docs:
             doc = self.inner_docs.pop()
-            c_path, s_path = doc + '/content.xml', doc + '/styles.xml'
+            c_path, s_path, m_path = (
+                doc + '/content.xml', doc + '/styles.xml', doc + '/meta.xml')
             content = zf.read(c_path)
             styles = zf.read(s_path)
+            meta = zf.read(m_path)
 
             c_parsed = template._parse(self.insert_directives(content),
                                        encoding)
             s_parsed = template._parse(self.insert_directives(styles),
                                        encoding)
+            m_parsed = template._parse(self.insert_directives(meta),
+                                       encoding)
             content_files.append((c_path, c_parsed))
             styles_files.append((s_path, s_parsed))
+            meta_files.append((m_path, m_parsed))
         zf.close()
 
         parsed = []
-        for fpath, fparsed in content_files + styles_files:
+        for fpath, fparsed in content_files + styles_files + meta_files:
             self._files.add(fpath)
             parsed.append((genshi.core.PI, ('relatorio', fpath), None))
             parsed += fparsed
@@ -316,16 +333,6 @@ class Template(MarkupTemplate):
         tree = lxml.etree.parse(BytesIO(content))
         root = tree.getroot()
 
-        # assign default/fake namespaces so that documents do not need to
-        # define them if they don't use them
-        self.namespaces = {
-            "text": "urn:text",
-            "draw": "urn:draw",
-            "table": "urn:table",
-            "office": "urn:office",
-            "xlink": "urn:xlink",
-            "svg": "urn:svg",
-        }
         # but override them with the real namespaces
         self.namespaces.update(root.nsmap)
 
@@ -337,6 +344,7 @@ class Template(MarkupTemplate):
 
         self._remove_soft_page_break(tree)
         self._invert_style(tree)
+        self._handle_meta(tree)
         self._handle_relatorio_tags(tree)
         self._handle_images(tree)
         self._handle_innerdocs(tree)
@@ -426,6 +434,45 @@ class Template(MarkupTemplate):
                                    )
         assert not opened_tags
         return r_statements, closing_tags
+
+    def _handle_meta(self, tree):
+        """updates meta
+        and adds py:content into meta:user-defined and dc:* nodes"""
+        root = tree.getroot()
+        if root.tag != '{%s}document-meta' % self.namespaces['office']:
+            return
+        xpath_expr = ("//meta:user-defined[starts-with(., 'relatorio://')]"
+                      "|//dc:*[starts-with(., 'relatorio://')]")
+        genshi_content = '{%s}content' % self.namespaces['py']
+        for node in tree.xpath(xpath_expr, namespaces=self.namespaces):
+            node.attrib[genshi_content] = node.text[len('relatorio://'):]
+
+        def set(name, value):
+            meta = root.find('{%s}%s' % (self.namespaces['meta'], name))
+            if meta is None:
+                meta = EtreeElement(
+                    '{%s}%s' % (self.namespaces['meta'], name),
+                    nsmap=self.namespaces)
+                root.append(meta)
+            meta.text = value
+
+        def remove(name, namespace='meta'):
+            meta = tree.find('{%s}%s' % (self.namespaces[namespace], name))
+            if meta is not None:
+                tree.remove(meta)
+
+        now = datetime.datetime.now()
+        set('creation-date', now.isoformat())
+        set('date', now.isoformat())
+        remove('document-statistic')
+        set('editing-cycles', '1')
+        remove('editing-duration')
+        set('generator', 'relatorio/%s' % relatorio.__version__)
+        remove('initial-creator')
+        remove('print-date')
+        remove('printed-by')
+        remove('creator', 'dc')
+        remove('date', 'dc')
 
     def _handle_relatorio_tags(self, tree):
         """
@@ -996,51 +1043,6 @@ class Manifest(object):
             self.root.remove(entry)
 
 
-class Meta(object):
-
-    def __init__(self, content):
-        self.tree = lxml.etree.parse(BytesIO(content))
-        root = self.tree.getroot()
-        self.namespaces = root.nsmap
-        path = '/office:document-meta/office:meta'
-        self.office_meta, = self.tree.xpath(path, namespaces=self.namespaces)
-
-    def set(self, name, value, namespace='meta'):
-        namespace = self.namespaces[namespace]
-        meta = self.office_meta.find('{%s}%s' % (namespace, name))
-        if meta is None:
-            meta = EtreeElement('{%s}%s' % (namespace, name),
-                                nsmap={'meta': namespace})
-            self.office_meta.append(meta)
-        meta.text = value
-
-    def remove(self, name, namespace='meta'):
-        namespace = self.namespaces[namespace]
-        meta = self.office_meta.find('{%s}%s' % (namespace, name))
-        if meta is not None:
-            self.office_meta.remove(meta)
-
-    def __str__(self):
-        now = datetime.datetime.now()
-        self.set('creation-date', now.isoformat())
-        self.set('date', now.isoformat())
-        self.remove('document-statistic')
-        self.set('editing-cycles', '1')
-        self.remove('editing-duration')
-        self.set('generator', 'relatorio/%s' % relatorio.__version__)
-        self.remove('initial-creator')
-        self.remove('print-date')
-        self.remove('printed-by')
-        self.remove('creator', 'dc')
-        self.remove('date', 'dc')
-        val = lxml.etree.tostring(self.tree, encoding='UTF-8',
-                                  xml_declaration=True)
-        # In Python 3, val will be bytes
-        if not isinstance(val, str):
-            return str(val, 'utf-8')
-        return val
-
-
 class _AbstractZipWriteSplitStream(object):
     def __init__(self, zipfile, chunksize=64):
         self.zipfile = zipfile
@@ -1122,7 +1124,6 @@ class OOSerializer:
     def __init__(self, source, files, chunksize=64):
         self.inzip = get_zip_file(source)
         self.manifest = Manifest(self.inzip.read(MANIFEST))
-        self.meta = Meta(self.inzip.read(META))
         self.xml_serializer = genshi.output.XMLSerializer()
         self._files = files
         self.chunksize = chunksize
@@ -1152,8 +1153,6 @@ class OOSerializer:
                 files[f_info.filename] = new_info
             elif f_info.filename == MANIFEST:
                 manifest_info = f_info
-            elif f_info.filename == META:
-                self.outzip.writestr(f_info, str(self.meta))
             elif f_info.filename.startswith(THUMBNAILS + '/'):
                 self.manifest.remove_file_entry(f_info.filename)
             else:
