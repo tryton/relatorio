@@ -37,6 +37,7 @@ setup(
         'relatorio.tests': [
             '*.jpg', '*.odt', '*.fodt', '*.png', 'templates/*.tmpl'],
         },
+    scripts=['scripts/relatorio-render'],
     install_requires=[
         "Genshi >= 0.5",
         "lxml >= 2.0"
