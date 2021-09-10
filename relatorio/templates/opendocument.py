@@ -11,7 +11,7 @@ import base64
 import mimetypes
 import sys
 import time
-import urllib
+import urllib.parse
 import zipfile
 from io import BytesIO
 from copy import deepcopy
@@ -37,15 +37,6 @@ try:
     from relatorio.templates.chart import Template as ChartTemplate
 except ImportError:
     ChartTemplate = None
-
-try:
-    basestring
-except NameError:
-    basestring = str
-try:
-    long
-except NameError:
-    long = int
 
 __metaclass__ = type
 warnings.filterwarnings('always', module='relatorio.templates.opendocument')
@@ -76,7 +67,7 @@ output_encode = genshi.output.encode
 EtreeElement = lxml.etree.Element
 XML_INVALID_CHAR_EXPR = re.compile(
     # from https://www.w3.org/TR/REC-xml/#charsets
-    u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
+    '[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
 # A note regarding OpenDocument namespaces:
 #
@@ -241,7 +232,7 @@ def update_py_attrs(node, value):
 
 def escape_xml_invalid_chars(value, repl=' '):
     "Replace invalid characters for XML."
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         return XML_INVALID_CHAR_EXPR.sub(repl, value)
     else:
         return value
@@ -394,7 +385,8 @@ class Template(MarkupTemplate):
             if statement.tag == placeholder:
                 expr = statement.text[1:-1]
             elif statement.tag == text_a:
-                expr = urllib.unquote(statement.attrib[xlink_href_attrib][12:])
+                expr = urllib.parse.unquote(
+                    statement.attrib[xlink_href_attrib][12:])
 
             if not expr:
                 raise OOTemplateError("No expression in the tag",
@@ -617,8 +609,8 @@ class Template(MarkupTemplate):
         repeat_tag = '{%s}repeat' % RELATORIO_URI
 
         # table node (it is not necessarily the direct parent of ancestor)
-        table_node = ancestor.iterancestors('{%s}table' % table_namespace) \
-                             .next()
+        table_node = next(
+            ancestor.iterancestors('{%s}table' % table_namespace))
         table_name = table_node.attrib['{%s}name' % table_namespace]
 
         # add counting instructions
@@ -757,7 +749,7 @@ class Template(MarkupTemplate):
         assert row_node.tag == table_row_tag
         next_rows = row_node.itersiblings(table_row_tag)
         for row_idx in range(rows_spanned - 1):
-            next_row_node = next_rows.next()
+            next_row_node = next(next_rows)
             rows_to_wrap.append(next_row_node)
             # compute the start and end nodes
             first = next_row_node[opening_pos]
@@ -821,7 +813,7 @@ class Template(MarkupTemplate):
     def _escape_values(self, tree):
         "escapes element values"
         for element in tree.iter():
-            for attrs in element.keys():
+            for attrs in list(element.keys()):
                 if not attrs.startswith('{%s}' % GENSHI_URI):
                     element.attrib[attrs] = element.attrib[attrs]\
                             .replace(PREFIX, PREFIX * 2)
@@ -847,9 +839,9 @@ class Template(MarkupTemplate):
         elif isinstance(val, datetime.date):
             type_ = 'date'
             val = val.isoformat()
-        elif isinstance(val, (int, float, long, Decimal)):
+        elif isinstance(val, (int, float, Decimal)):
             type_ = 'float'
-        elif isinstance(val, basestring):
+        elif isinstance(val, str):
             type_ = 'string'
             val = escape_xml_invalid_chars(val)
         elif isinstance(val, datetime.timedelta):
@@ -973,7 +965,7 @@ def fod2od(source):
         xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"/>
         ''')
     manifest.add_file_entry('/', mimetype)
-    for fname, document in documents.iteritems():
+    for fname, document in documents.items():
         document_string = lxml.etree.tostring(document, encoding='UTF-8',
                                               xml_declaration=True)
         odt_zip.writestr('%s.xml' % fname, document_string)

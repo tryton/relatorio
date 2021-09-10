@@ -10,7 +10,7 @@ from relatorio.reporting import (ReportRepository, Report, MIMETemplateLoader,
 class StubObject(object):
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.iteritems():
+        for key, val in kwargs.items():
             setattr(self, key, val)
 
 

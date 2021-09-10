@@ -14,11 +14,6 @@ from relatorio.templates.opendocument import Template, GENSHI_EXPR,\
     GENSHI_URI, RELATORIO_URI, fod2od, remove_node_keeping_tail, \
     escape_xml_invalid_chars
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 
 
@@ -27,16 +22,16 @@ def pseudo_gettext(string):
                'Bonjour,': 'Hello,',
                'Je suis un test de templating en odt.':
                'I am an odt templating test',
-               'Felix da housecat': u'Félix le chat de la maison',
-               'We sell stuff': u'On vend des choses',
+               'Felix da housecat': 'Félix le chat de la maison',
+               'We sell stuff': 'On vend des choses',
               }
     return catalog.get(string, string)
 
 
 def stream_to_string(stream):
     # In Python 3, stream will be bytes
-    if not isinstance(stream, unicode):
-        return unicode(stream, 'utf-8')
+    if not isinstance(stream, str):
+        return str(stream, 'utf-8')
     return stream
 
 
@@ -47,22 +42,22 @@ class TestOOTemplating(unittest.TestCase):
         filepath = os.path.join(thisdir, 'test.odt')
         self._source = open(filepath, mode='rb')
         self.oot = Template(self._source)
-        self.data = {'first_name': u'Trente',
-                     'last_name': u'Møller',
-                     'ville': u'Liège',
-                     'friends': [{'first_name': u'Camille',
-                                  'last_name': u'Salauhpe'},
-                                 {'first_name': u'Mathias',
-                                  'last_name': u'Lechat'}],
-                     'hobbies': [u'Music', u'Dancing', u'DJing'],
-                     'animals': [u'Felix da housecat', u'Dog eat Dog'],
+        self.data = {'first_name': 'Trente',
+                     'last_name': 'Møller',
+                     'ville': 'Liège',
+                     'friends': [{'first_name': 'Camille',
+                                  'last_name': 'Salauhpe'},
+                                 {'first_name': 'Mathias',
+                                  'last_name': 'Lechat'}],
+                     'hobbies': ['Music', 'Dancing', 'DJing'],
+                     'animals': ['Felix da housecat', 'Dog eat Dog'],
                      'images': [(open(os.path.join(thisdir, 'one.jpg'), 'rb'),
                                  'image/jpeg', None, None, 'One'),
                                 (open(os.path.join(thisdir, 'two.png'), 'rb'),
                                  'image/png', '2cm', '2.2cm', 'Two'),
                                 (None, None)],
                      'oeuf': open(os.path.join(thisdir, 'egg.jpg'), 'rb'),
-                     'footer': u'We sell stuff',
+                     'footer': 'We sell stuff',
                      'salutation': 'Greating',
                      'title': 'Testing Letter',
                      }
@@ -392,7 +387,7 @@ class TestOOTemplating(unittest.TestCase):
         rendered = stream_to_string(stream.events.render(encoding='utf-8'))
         self.assertTrue('Bonjour,' in rendered)
         self.assertTrue('Trente' in rendered)
-        self.assertTrue(u'Møller' in rendered)
+        self.assertTrue('Møller' in rendered)
         self.assertTrue('Dog eat Dog' in rendered)
         self.assertTrue('Felix da housecat' in rendered)
 
@@ -405,7 +400,7 @@ class TestOOTemplating(unittest.TestCase):
         self.assertTrue("Hello," in translated_xml)
         self.assertTrue("I am an odt templating test" in translated_xml)
         self.assertTrue('Felix da housecat' not in translated_xml)
-        self.assertTrue(u'Félix le chat de la maison' in translated_xml)
+        self.assertTrue('Félix le chat de la maison' in translated_xml)
         self.assertTrue('We sell stuff' not in translated_xml)
         self.assertTrue('On vend des choses' in translated_xml)
 

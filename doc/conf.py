@@ -34,8 +34,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'relatorio'
-copyright = u'2015, Nicolas Évrard, CGaëtan de Menten, Cédric Krier'
+project = 'relatorio'
+copyright = '2015, Nicolas Évrard, CGaëtan de Menten, Cédric Krier'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -179,8 +179,8 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ('index', 'relatorio.tex', u'relatorio Documentation',
-        u'Nicolas Évrard, CGaëtan de Menten, Cédric Krier', 'manual'),
+    ('index', 'relatorio.tex', 'relatorio Documentation',
+        'Nicolas Évrard, CGaëtan de Menten, Cédric Krier', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -209,8 +209,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'relatorio', u'relatorio Documentation',
-     [u'Nicolas Évrard, CGaëtan de Menten, Cédric Krier'], 1)
+    ('index', 'relatorio', 'relatorio Documentation',
+     ['Nicolas Évrard, CGaëtan de Menten, Cédric Krier'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -223,8 +223,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'relatorio', u'relatorio Documentation',
-        u'Nicolas Évrard, CGaëtan de Menten, Cédric Krier', 'relatorio',
+    ('index', 'relatorio', 'relatorio Documentation',
+        'Nicolas Évrard, CGaëtan de Menten, Cédric Krier', 'relatorio',
         'a templating library',
         'Templating'),
 ]

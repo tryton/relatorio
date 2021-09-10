@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from os.path import abspath, join, dirname
 from relatorio import Report
 from relatorio.templates import opendocument

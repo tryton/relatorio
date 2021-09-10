@@ -1,3 +1,4 @@
+* Remove support for Python older than 3.5
 * Add relatorio-render script
 * Add templating of meta in opendocument
 

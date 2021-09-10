@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import relatorio
 from common import Invoice, inv
 from os.path import join, dirname
