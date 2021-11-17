@@ -176,6 +176,20 @@ class TestOOTemplating(unittest.TestCase):
             child.get('{http://genshi.edgewall.org/}replace'),
             '__relatorio_escape_invalid_chars(foo)')
 
+    def test_directives_on_self(self):
+        "Testing directive that applies on itself"
+        xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">
+                    <text:a xlink:href="relatorio://attrs text:a=&quot;{'{urn:xlink}href': 'foo'}&quot;">
+                    test
+                    </text:a>
+                </xml>'''
+        interpolated = self.oot.insert_directives(xml)
+        root_interpolated = lxml.etree.parse(interpolated).getroot()
+        child = root_interpolated[0]
+        self.assertEqual(
+            child.get('{http://genshi.edgewall.org/}attrs'),
+            "{'{urn:xlink}href': 'foo'}")
+
     def test_column_looping(self):
         xml = b'''
 <table:table

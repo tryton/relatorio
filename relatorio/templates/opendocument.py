@@ -399,7 +399,9 @@ class Template(MarkupTemplate):
             if not statement.text:
                 warn_msg = "No statement text in '%s' for '%s'" \
                            % (self.filepath, expr)
-            elif expr != statement.text and statement.tag == text_a:
+            elif (directive != 'attrs'
+                    and expr != statement.text
+                    and statement.tag == text_a):
                 warn_msg = "url and text do not match in %s: %s != %s" \
                            % (self.filepath, expr, statement.text)
             if warn_msg:
@@ -560,7 +562,8 @@ class Template(MarkupTemplate):
                 parent.attrib[py_attr] = a_val
 
                 # remove the directive node
-                r_node.getparent().remove(r_node)
+                if parent != r_node:
+                    r_node.getparent().remove(r_node)
             else:
                 def has_style(node):
                     return any(attr in node.attrib

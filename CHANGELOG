@@ -1,3 +1,5 @@
+* Support directive applying to itself
+
 * 0.10.0 - 20210911
 * Remove support for Python older than 3.5
 * Add relatorio-render script
