@@ -563,7 +563,7 @@ class Template(MarkupTemplate):
 
                 # remove the directive node
                 if parent != r_node:
-                    r_node.getparent().remove(r_node)
+                    remove_node_keeping_tail(r_node)
             else:
                 def has_style(node):
                     return any(attr in node.attrib

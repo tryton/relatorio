@@ -176,6 +176,21 @@ class TestOOTemplating(unittest.TestCase):
             child.get('{http://genshi.edgewall.org/}replace'),
             '__relatorio_escape_invalid_chars(foo)')
 
+    def test_directives_with_tail(self):
+        "Testing directives with tail"
+        xml = b'''<xml xmlns:text="urn:text">
+                    <text:p>before
+                        <text:placeholder>&lt;attrs text:p=&quot;{}&quot;&gt;</text:placeholder>
+                        after
+                    </text:p>
+                </xml>'''
+        interpolated = self.oot.insert_directives(xml)
+        root_interpolated = lxml.etree.parse(interpolated).getroot()
+        paragraph = root_interpolated[0]
+        self.assertEqual(len(paragraph), 0)
+        self.assertEqual(
+            ''.join(map(str.strip, paragraph.text.split())), 'beforeafter')
+
     def test_directives_on_self(self):
         "Testing directive that applies on itself"
         xml = b'''<xml xmlns:text="urn:text" xmlns:xlink="urn:xlink">

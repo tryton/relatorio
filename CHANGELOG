@@ -1,4 +1,5 @@
 * Support directive applying to itself
+* Keep tail of directive
 
 * 0.10.0 - 20210911
 * Remove support for Python older than 3.5
