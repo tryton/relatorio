@@ -1,3 +1,4 @@
+* Add support for Python 3.10
 * Support directive applying to itself
 * Keep tail of directive
 
