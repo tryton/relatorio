@@ -1,7 +1,9 @@
 
-import relatorio
+from os.path import dirname, join
+
 from common import Invoice, inv
-from os.path import join, dirname
+
+import relatorio
 
 ODT_MIME = 'application/vnd.oasis.opendocument.text'
 ODS_MIME = 'application/vnd.oasis.opendocument.spreadsheet'

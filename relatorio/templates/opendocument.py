@@ -1,6 +1,7 @@
 # This file is part of relatorio.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import re
+
 try:
     # requires python 2.5+
     from hashlib import md5
@@ -8,31 +9,30 @@ except ImportError:
     from md5 import md5
 
 import base64
+import datetime
 import mimetypes
 import sys
 import time
 import urllib.parse
-import zipfile
-from io import BytesIO
-from copy import deepcopy
-import datetime
-from decimal import Decimal
-
-
 import warnings
+import zipfile
+from copy import deepcopy
+from decimal import Decimal
+from io import BytesIO
 
-import lxml.etree
 import genshi
 import genshi.output
-from genshi.template import MarkupTemplate
+import lxml.etree
+from genshi.core import Stream
 from genshi.filters import Transformer
 from genshi.filters.transform import ENTER, EXIT
-from genshi.core import Stream
+from genshi.template import MarkupTemplate
 from genshi.template.interpolation import PREFIX
 
 import relatorio
+from relatorio.reporting import MIMETemplateLoader, Report
 from relatorio.templates.base import RelatorioStream
-from relatorio.reporting import Report, MIMETemplateLoader
+
 try:
     from relatorio.templates.chart import Template as ChartTemplate
 except ImportError:

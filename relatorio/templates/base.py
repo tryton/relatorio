@@ -1,7 +1,7 @@
 # This file is part of relatorio.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import genshi.core
-from genshi.template import NewTextTemplate, MarkupTemplate
+from genshi.template import MarkupTemplate, NewTextTemplate
 
 from relatorio.reporting import MIMETemplateLoader
 

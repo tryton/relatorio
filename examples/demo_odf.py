@@ -1,10 +1,11 @@
 
-from os.path import abspath, join, dirname
-from relatorio import Report
-from relatorio.templates import opendocument
+from os.path import abspath, dirname, join
 
 # test data
 from common import inv
+
+from relatorio import Report
+from relatorio.templates import opendocument
 
 ODT_MIME = 'application/vnd.oasis.opendocument.text'
 ODS_MIME = 'application/vnd.oasis.opendocument.spreadsheet'

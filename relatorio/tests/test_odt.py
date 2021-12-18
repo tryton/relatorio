@@ -3,16 +3,16 @@
 # this repository contains the full copyright notices and license terms.
 import os
 import unittest
-from io import StringIO, BytesIO
+from io import BytesIO, StringIO
 
 import lxml.etree
-from genshi.filters import Translator
 from genshi.core import PI
+from genshi.filters import Translator
 from genshi.template.eval import UndefinedError
 
-from relatorio.templates.opendocument import Template, GENSHI_EXPR,\
-    GENSHI_URI, RELATORIO_URI, fod2od, remove_node_keeping_tail, \
-    escape_xml_invalid_chars
+from relatorio.templates.opendocument import (
+    GENSHI_EXPR, GENSHI_URI, RELATORIO_URI, Template, escape_xml_invalid_chars,
+    fod2od, remove_node_keeping_tail)
 
 OO_TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 

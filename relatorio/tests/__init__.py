@@ -1,7 +1,7 @@
 # This file is part of relatorio.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
-import sys
 import os
+import sys
 import unittest
 
 here = os.path.dirname(__file__)

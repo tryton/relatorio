@@ -6,16 +6,16 @@ import genshi
 import genshi.output
 from genshi.template import NewTextTemplate
 
-from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import MIMETemplateLoader
+from relatorio.templates.base import RelatorioStream
 
 try:
-    import yaml
     import cairo
     import pycha
-    import pycha.pie
-    import pycha.line
     import pycha.bar
+    import pycha.line
+    import pycha.pie
+    import yaml
 
     PYCHA_TYPE = {'pie': pycha.pie.PieChart,
                   'vbar': pycha.bar.VerticalBarChart,

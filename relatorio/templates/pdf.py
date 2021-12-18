@@ -2,16 +2,16 @@
 # this repository contains the full copyright notices and license terms.
 import os
 import shutil
-import tempfile
 import subprocess
+import tempfile
 from io import BytesIO
 
 import genshi
 import genshi.output
 from genshi.template import NewTextTemplate
 
-from relatorio.templates.base import RelatorioStream
 from relatorio.reporting import MIMETemplateLoader
+from relatorio.templates.base import RelatorioStream
 
 __metaclass__ = type
 

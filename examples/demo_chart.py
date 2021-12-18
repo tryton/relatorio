@@ -1,8 +1,9 @@
-from os.path import abspath, join, dirname
-from relatorio import Report
+from os.path import abspath, dirname, join
 
 # test data
 from common import inv
+
+from relatorio import Report
 
 if __name__ == '__main__':
     pie_report = Report(abspath(join(dirname(__file__), 'pie_chart')),

@@ -3,8 +3,9 @@
 import os
 import unittest
 
-from relatorio.reporting import (ReportRepository, Report, MIMETemplateLoader,
-                                 DefaultFactory, _absolute, _guess_type)
+from relatorio.reporting import (
+    DefaultFactory, MIMETemplateLoader, Report, ReportRepository, _absolute,
+    _guess_type)
 
 
 class StubObject(object):
