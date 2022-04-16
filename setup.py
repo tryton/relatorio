@@ -62,7 +62,5 @@ setup(
         'Programming Language :: Python :: 3.10',
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Text Processing",
-    ],
-    test_suite="relatorio.tests",
-    tests_require=['python-magic'],
+        ],
     )
