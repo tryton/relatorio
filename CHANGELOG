@@ -1,3 +1,4 @@
+* 0.10.1 - 20220502
 * Use unittest discover
 * Add support for Python 3.10
 * Support directive applying to itself
