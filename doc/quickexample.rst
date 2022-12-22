@@ -39,7 +39,7 @@ following commands::
     basic_generated = basic.generate(o=bonham_invoice).render()
     file('bonham_basic.odt', 'wb').write(basic_generated.getvalue())
 
-.. _IPython: http://ipython.scipy.org/
+.. _IPython: https://ipython.org/
 
 On the first line we import the opendocument Template engine. This class has
 the same signature as the one from Genshi but uses only the filepath argument.

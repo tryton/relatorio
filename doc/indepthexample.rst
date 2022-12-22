@@ -4,7 +4,7 @@ Indepth Example
 In this page I will detail the way I created the reports that can be found in
 the `examples directory`_.
 
-.. _examples directory: http://hg.tryton.org/relatorio/file/tip/examples
+.. _examples directory: https://foss.heptapod.net/tryton/relatorio/-/tree/branch/default/examples
 
 Let's start with the content of :file:`common.py`, this file stores the
 definition of an invoice that will be used to create the different reports. The
@@ -34,8 +34,8 @@ Text Placeholder_ containing `o.customer.name`. This is where you can see our
 Genshi_ heritage. In fact, all reports using relatorio are subclasses of
 Genshi's Template. Thus you can use most of the goodies provided by Genshi.
 
-.. _Placeholder: http://wiki.services.openoffice.org/wiki/Documentation/OOoAuthors_User_Manual/Writer_Guide/Using_placeholder_fields
-.. _Genshi: http://genshi.edgewall.org/
+.. _Placeholder: https://wiki.openoffice.org/wiki/Documentation/OOoAuthors_User_Manual/Writer_Guide/Using_placeholder_fields
+.. _Genshi: https://genshi.edgewall.org/
 
 To iterate over a list you must use an hyperlink (created through
 'Insert > Hyperlink') and encode as the target the Genshi expression to use.
@@ -66,7 +66,7 @@ of the invoice object:
 Note that there is another tab in this Calc file used to make some data
 aggregation thanks to the `data pilot`_ possibilities of OpenOffice.
 
-.. _data pilot: http://www.learnopenoffice.org/CalcTutorial33.htm
+.. _data pilot: https://help.libreoffice.org/latest/en-US/text/scalc/guide/datapilot.html
 
 And so here is our rendered template:
 
@@ -85,7 +85,7 @@ template:
 .. include:: ../examples/pie_chart
     :literal:
 
-.. _PyCha: http://www.lorenzogil.com/projects/pycha/
+.. _PyCha: https://pypi.org/project/pycha/
 
 Once again we are using the same syntax as Genshi but this time this is a
 TextTemplate_. This file follow the YAML_ format thus we can render it into a
@@ -95,12 +95,12 @@ data structure that will be sent to PyCha:
     * the dataset in the chart dictionary is sent to PyCha through its
       `.addDataset` method.
 
-.. _TextTemplate: http://genshi.edgewall.org/wiki/Documentation/text-templates.html
-.. _YAML: http://www.yaml.org/
+.. _TextTemplate: https://genshi.edgewall.org/wiki/Documentation/text-templates.html
+.. _YAML: https://yaml.org/
 
 If you need more information about those go to the `pycha website`_.
 
-.. _pycha website: http://www.lorenzogil.com/projects/pycha/
+.. _pycha website: https://pypi.org/project/pycha/
 
 And here is the result:
 
@@ -126,11 +126,9 @@ the following example:
 
 The expression when evaluated must return a couple whose first element is a
 file object containing the image and second element is its mimetype. Note that
-if the first element of the couple is an instance of `relatorio report`_ then
+if the first element of the couple is an instance of ``relatorio.Report`` then
 this report is rendered (using the same arguments as the originating template)
-and used as a the source for the file definition.
-
-.. _relatorio report: http://hg.tryton.org/relatorio/file/tip/relatorio/reporting#l108
+and used as the source for the file definition.
 
 This kind of setup gives us a nice report like that:
 
