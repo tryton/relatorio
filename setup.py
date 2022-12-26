@@ -28,7 +28,7 @@ setup(
         "Bug Tracker": 'https://relatorio.tryton.org/',
         "Documentation": 'https://relatorio.readthedocs.org/',
         "Forum": 'https://discuss.tryton.org/tags/relatorio',
-        "Source Code": 'https://foss.heptapod.net/tryton/relatorio',
+        "Source Code": 'https://code.tryton.org/relatorio',
         },
     keywords='templating OpenDocument PDF',
     license="GPL License",
