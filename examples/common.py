@@ -5,7 +5,7 @@ class Invoice(dict):
 
     @property
     def total(self):
-        return sum(l['amount'] for l in self['lines'])
+        return sum(line['amount'] for line in self['lines'])
 
     @property
     def vat(self):

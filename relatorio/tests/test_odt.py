@@ -100,7 +100,7 @@ class TestOOTemplating(unittest.TestCase):
                             <text:a xlink:href="relatorio://foo">foo</text:a>
                         </text:p>
                     </table:table-cell>
-                 </xml>'''
+                 </xml>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         cell = root_interpolated[0]
@@ -122,7 +122,7 @@ class TestOOTemplating(unittest.TestCase):
                         </text:p>
                         <text:p>bar</text:p>
                     </table:table-cell>
-                 </xml>'''
+                 </xml>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         cell = root_interpolated[0]
@@ -143,7 +143,7 @@ class TestOOTemplating(unittest.TestCase):
                             <text:a xlink:href="relatorio://foo">foo</text:a>
                         </text:p>
                     </table:table-cell>
-                 </xml>'''
+                 </xml>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         cell = root_interpolated[0]
@@ -164,7 +164,7 @@ class TestOOTemplating(unittest.TestCase):
                             bar
                         </text:p>
                     </table:table-cell>
-                 </xml>'''
+                 </xml>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         cell = root_interpolated[0]
@@ -183,7 +183,7 @@ class TestOOTemplating(unittest.TestCase):
                         <text:placeholder>&lt;attrs text:p=&quot;{}&quot;&gt;</text:placeholder>
                         after
                     </text:p>
-                </xml>'''
+                </xml>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         paragraph = root_interpolated[0]
@@ -197,7 +197,7 @@ class TestOOTemplating(unittest.TestCase):
                     <text:a xlink:href="relatorio://attrs text:a=&quot;{'{urn:xlink}href': 'foo'}&quot;">
                     test
                     </text:a>
-                </xml>'''
+                </xml>'''  # noqa: E501
         interpolated = self.oot.insert_directives(xml)
         root_interpolated = lxml.etree.parse(interpolated).getroot()
         child = root_interpolated[0]
