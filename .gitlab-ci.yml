@@ -59,12 +59,15 @@ check-dist:
       - .cache/pip
   before_script:
     - pip install tox
+  artifacts:
+    reports:
+      junit: junit.xml
 
 test-tox-python:
   extends: .test-tox
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/python:${PYTHON_VERSION}
   script:
-    - tox -e "py${PYTHON_VERSION/./}"
+    - tox -e "py${PYTHON_VERSION/./}" -vv -- -v --output-file junit.xml
   parallel:
     matrix:
       - PYTHON_VERSION: ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10"]
@@ -73,4 +76,4 @@ test-tox-pypy:
   extends: .test-tox
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/pypy:3
   script:
-    - tox -e pypy3
+    - tox -e pypy3 -vv -- -v --output-file junit.xml
