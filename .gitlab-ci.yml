@@ -17,7 +17,7 @@ stages:
 
 check-doc:
   extends: .check
-  image: sphinxdoc/sphinx
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/sphinxdoc/sphinx
   script:
     - python -m sphinx -T -E -W -n -b html doc _build/html
     - python -m sphinx -T -E -W -n -b linkcheck doc _build
