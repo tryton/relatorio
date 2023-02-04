@@ -18,8 +18,14 @@ stages:
 check-doc:
   extends: .check
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/sphinxdoc/sphinx
+  cache:
+    paths:
+      - .cache/pip
+  before_script:
+    - pip install sphinx-lint
   script:
     - python -m sphinx -T -E -W -n -b html doc _build/html
+    - python -m sphinxlint doc
     - python -m sphinx -T -E -W -n -b linkcheck doc _build
   rules:
     - changes:
