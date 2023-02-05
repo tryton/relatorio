@@ -28,12 +28,12 @@ check-doc:
 check-flake8:
   extends: .check
   script:
-    - hg diff --rev s0 | flake8 --diff
+    - flake8
 
 check-isort:
   extends: .check
   script:
-    - isort -m VERTICAL_GRID -p trytond -c `hg status --no-status --added --modified --rev s0`
+    - isort -m VERTICAL_GRID -c .
 
 check-dist:
   extends: .check
