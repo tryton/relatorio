@@ -10,9 +10,6 @@ stages:
 
 .check:
   stage: check
-  rules:
-    - if: $CI_MERGE_REQUEST_ID != null
-      when: always
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/tryton/ci
 
 check-doc:
@@ -51,8 +48,6 @@ check-dist:
 
 .test:
   stage: test
-  rules:
-    - when: always
 
 .test-tox:
   extends: .test
