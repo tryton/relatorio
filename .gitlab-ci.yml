@@ -19,10 +19,12 @@ check-doc:
     paths:
       - .cache/pip
   before_script:
-    - pip install sphinx-lint
+    - pip install -r doc/requirements-doc.txt
+    - pip install sphinx-lint rstcheck[sphinx]
   script:
     - python -m sphinx -T -E -W -n -b html doc _build/html
     - python -m sphinxlint doc
+    - rstcheck --recursive doc
     - python -m sphinx -T -E -W -n -b linkcheck doc _build
   rules:
     - changes:

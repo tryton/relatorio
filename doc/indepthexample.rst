@@ -28,9 +28,9 @@ This report will be created and rendered with the following three line of code::
     basic = Template(source='', filepath='basic.odt')
     file('bonham_basic.odt', 'wb').write(basic.generate(o=inv).render().getvalue())
 
-Notice that the dictionary passed to `generate` is used to bind names to make
+Notice that the dictionary passed to ``generate`` is used to bind names to make
 them accessible to the report. So you can access the data of the invoice with a
-Text Placeholder_ containing `o.customer.name`. This is where you can see our
+Text Placeholder_ containing ``o.customer.name``. This is where you can see our
 Genshi_ heritage. In fact, all reports using relatorio are subclasses of
 Genshi's Template. Thus you can use most of the goodies provided by Genshi.
 
@@ -39,7 +39,7 @@ Genshi's Template. Thus you can use most of the goodies provided by Genshi.
 
 To iterate over a list you must use an hyperlink (created through
 'Insert > Hyperlink') and encode as the target the Genshi expression to use.
-The URL-scheme used *must* be `relatorio`. You can use whatever text you want
+The URL-scheme used *must* be ``relatorio``. You can use whatever text you want
 as the link text, but we find it way more explicit to display the Genshi code
 used. Here is the example of the for loop.
 
@@ -93,7 +93,7 @@ data structure that will be sent to PyCha:
 
     * the options dictionary will be sent to PyCha as-is
     * the dataset in the chart dictionary is sent to PyCha through its
-      `.addDataset` method.
+      ``.addDataset`` method.
 
 .. _TextTemplate: https://genshi.edgewall.org/wiki/Documentation/text-templates.html
 .. _YAML: https://yaml.org/
@@ -115,11 +115,11 @@ Now that we have everything to start working on our complicated template
 .. image:: complicated.png
 
 In this example, you can see that not only the openoffice plugin supports the
-`for directive`, it also supports the `if directive` and the `choose directive`
+``for directive``, it also supports the ``if directive`` and the ``choose directive``
 that way you can choose to render or not some elements.
 
 The next step is to add images programmatically, all you need to do is to
-create frame ('Insert > Frame') and name it `image: expression` just like in
+create frame ('Insert > Frame') and name it ``image: expression`` just like in
 the following example:
 
 .. image:: frame.png

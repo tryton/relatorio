@@ -44,7 +44,7 @@ following commands::
 On the first line we import the opendocument Template engine. This class has
 the same signature as the one from Genshi but uses only the filepath argument.
 On the fourth line, we generate the final document from the template and the
-data. Note how we pass `o=bonham_invoice` as argument to generate. This is the
+data. Note how we pass ``o=bonham_invoice`` as argument to generate. This is the
 same "o" variable as was used in the O dt template we just created. render()
 returns us a StringIO object, which is then used to pipe the result to a file.
 
@@ -54,6 +54,6 @@ And so here is our invoice with all the fields completed according to the
 Invoice object we created earlier. Notice how the style we set in the template
 are also applied in the resulting invoice.
 
-In this example, we only used the `py:for` directive, but Relatorio also
-supports other Genshi directives: `py:if`, `py:choose` / `py:when` /
-`py:otherwise` and `py:with`.
+In this example, we only used the ``py:for`` directive, but Relatorio also
+supports other Genshi directives: ``py:if``, ``py:choose`` / ``py:when`` /
+``py:otherwise`` and ``py:with``.
