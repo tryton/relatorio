@@ -7,3 +7,4 @@ Contents:
 
    quickexample
    indepthexample
+   releases

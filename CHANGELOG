@@ -1,31 +1,39 @@
-* 0.10.1 - 20220502
+
+0.10.1 - 20220502
+-----------------
 * Use unittest discover
 * Add support for Python 3.10
 * Support directive applying to itself
 * Keep tail of directive
 
-* 0.10.0 - 20210911
+0.10.0 - 20210911
+-----------------
 * Remove support for Python older than 3.5
 * Add relatorio-render script
 * Add templating of meta in opendocument
 
 0.9.3 - 20210507
+----------------
 * Support empty image in opendocument
 * Add support for Python 3.9
 
 0.9.2 - 20200826
+----------------
 * Support draw name tuple without parenthesis
 
 0.9.1 - 20200126
+----------------
 * Do not guess type of cell if directive is not alone
 * Add support for Python 3.8
 * Support file-magic as fallback to python-magic
 
 0.9.0 - 20190729
+----------------
 * Support out parameter of render
 * Write opendocument stream directly to the ZipFile
 
 0.8.1 - 20180930
+----------------
 * Add support for Python 3.7
 * Escape invalid XML characters
 * Enforce closing tag to be the same directive as the opening
@@ -33,46 +41,56 @@
 * Write mimetype as first file of the zip file
 
 0.8.0 - 20171204
+----------------
 * Do not guess_type on styled cell content
 * Remove type attributes when guessing type
 * Add support for Python 3.6
 * Remove soft-page-break
 
 0.7.1 - 20171008
+----------------
 * Remove warning when import plugin fails
 * Apply the guess type function on the correct node
 * Fix guess_type for date and datetime
 
 0.7.0 - 20170729
+----------------
 * Replace hard-coded extensions by mimetypes guess
 * Add more guess types: 'boolean', 'date', 'time' and 'void'
 * Add support for Flat OpenDocument
 
 0.6.4 - 20161218
+----------------
 * Use StringIO instead of BytesIO for TextSerializer result
 
 0.6.3 - 20160629
+----------------
 * Update calcext:value-type with the same guessed type
 * Register MarkupTemplate for 'markup' mimetype instead of 'xml'
 
 0.6.2 - 20150919
+----------------
 * Add name argument for "image:" in odf
 * Remove table:end-cell-address from draw:frame as the address could be wrong
 * Remove nose
 * Add directives: attrs, content, replace and strip
 
 0.6.1 - 20140909
+----------------
 * Use io module instead of StringIO
 * Explicitly close ZipFile
 
 0.6.0 - 20130810
+----------------
  * Add support for Python 3
  * Allow to pass only source to Template
 
 0.5.7 - 20130126
+----------------
  * Allow string as bitstream for images
 
 0.5.6 - 20120223
+----------------
  * Add expression cache to prevent multiple evaluation of the same expression
  * Fix typo when writing manifest
  * Remove Thumbnails in opendocument
@@ -81,17 +99,21 @@
  * Use StringIO as failback of cStringIO
 
 0.5.5 - 20100719
+----------------
  * Fix namespace in opendocument manifest
 
 0.5.4 - 20100330
+----------------
  * Update manifest.xml with added files in opendocument
  * Do not write empty width or height attributes in opendocument
  * Update py:attrs attributes in opendocument
 
 0.5.3 - 20100110
+----------------
  * Escape elements values in opendocument template
 
 0.5.2 - 20091108
+----------------
  * Fix guess_type for long value
  * Add width, height arguments for "image:" in odf
  * Switch to GPL-3
@@ -99,6 +121,7 @@
  * Nicer traceback message upon failed import
 
 0.5.1 - 20090416
+----------------
  * Simplified the examples
  * Fix usage of tags without attributes (choose & otherwise)
  * Print original traceback when a module can not be loaded
@@ -107,6 +130,7 @@
  * Added some tests
 
 0.5.0 - 20090123
+----------------
  * Added Text and XML Template to the TemplateLoader
  * Splitted mimetypes and ids in the ReportRepository
  * RelatorioStream now has a __str__ method
@@ -117,26 +141,31 @@
  * OOTemplate: Using compression
 
 0.4.1 - 20081110
+----------------
  * Support for upstream PyCha since the most annoying bug has been fixed
  * Removed the entrypoint stuff that was confusing lot of users
 
 0.4.0 - 20080910
+----------------
  * Generation of png/svg files through PyCha
  * Code cleaning
  * Signature of report __call__ method mimics the one of genshi templates
  * Added the possibility to call chart report from odf ones
 
 0.3.0 - 20080806
+----------------
  * Generation of pdf files through ConTeXt
  * Better support of cell value in opendocument table cells
  * Better namespace support in opendocument files
  * Better image support in opendocument files
 
 0.2.0 - 20080717
+----------------
  * Added support for templating in the styles.xml file
  * Much more genshi-esque way to do stuff in the odt templating
 
 0.1.1 - 20080715
+----------------
  * Added an image handling feature (thanks to b2ck.com for the idea and bits of
    implementation)
  * Added the dependancy on Genshi
@@ -144,4 +173,5 @@
  * standardize the way the template object returns their results
 
 0.1.0 - 20080707
+----------------
 Initial version
