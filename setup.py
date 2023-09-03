@@ -25,7 +25,7 @@ setup(
     url='https://pypi.python.org/pypi/relatorio',
     download_url='https://downloads.tryton.org/relatorio/',
     project_urls={
-        "Bug Tracker": 'https://relatorio.tryton.org/',
+        "Bug Tracker": 'https://bugs.tryton.org/relatorio',
         "Documentation": 'https://relatorio.readthedocs.org/',
         "Forum": 'https://discuss.tryton.org/tags/relatorio',
         "Source Code": 'https://code.tryton.org/relatorio',
