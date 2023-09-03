@@ -19,7 +19,7 @@ def get_version():
 setup(
     name="relatorio",
     description="A templating library able to output odt and pdf files",
-    long_description=read('README'),
+    long_description=read('README.rst'),
     author='Tryton',
     author_email='relatorio@tryton.org',
     url='https://pypi.python.org/pypi/relatorio',

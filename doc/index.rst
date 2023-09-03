@@ -1,5 +1,4 @@
-Welcome to relatorio's documentation!
-=====================================
+.. include:: ../README.rst
 
 Contents:
 
