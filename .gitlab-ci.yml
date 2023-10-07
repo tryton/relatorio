@@ -75,7 +75,7 @@ test-tox-python:
     - tox -e "py${PYTHON_VERSION/./}" -vv -- -v --output-file junit.xml
   parallel:
     matrix:
-      - PYTHON_VERSION: ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+      - PYTHON_VERSION: ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
 
 test-tox-pypy:
   extends: .test-tox
