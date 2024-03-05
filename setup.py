@@ -26,7 +26,7 @@ setup(
     download_url='https://downloads.tryton.org/relatorio/',
     project_urls={
         "Bug Tracker": 'https://bugs.tryton.org/relatorio',
-        "Documentation": 'https://relatorio.readthedocs.org/',
+        "Documentation": 'https://docs.tryton.org/relatorio',
         "Forum": 'https://discuss.tryton.org/tags/relatorio',
         "Source Code": 'https://code.tryton.org/relatorio',
         },
