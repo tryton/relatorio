@@ -1123,7 +1123,7 @@ class OOSerializer:
         self._files = files
         self.chunksize = chunksize
         self.outzip = None
-        self._deferred = None
+        self._deferred = []
 
     def __call__(self, stream, method=None, encoding='utf-8', out=None):
         if out is None:
@@ -1132,7 +1132,6 @@ class OOSerializer:
             result = out
         self.outzip = zipfile.ZipFile(
             result, mode='w', compression=zipfile.ZIP_DEFLATED)
-        self._deferred = []
         files = {}
         now = time.localtime()[:6]
         manifest_info = None
@@ -1169,7 +1168,9 @@ class OOSerializer:
             return result
 
     def add_file(self, path, content, mimetype):
-        if self.outzip and path not in self.outzip.namelist():
+        if not self.outzip:
+            self._deferred.append((path, content, mimetype))
+        elif path not in self.outzip.namelist():
             try:
                 self.outzip.writestr(path, content)
                 self.manifest.add_file_entry(path, mimetype)
