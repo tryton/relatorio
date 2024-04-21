@@ -1,3 +1,5 @@
+0.10.2 - 20240421
+-----------------
 * Defer files added to serializer before call
 * Add support for Python 3.12
 
