@@ -859,9 +859,19 @@ class Template(MarkupTemplate):
             attrs['{%s}value-type' % self.namespaces['calcext']] = type_
         return attrs
 
-    def generate(self, *args, **kwargs):
+    def generate(self, *args,
+            _relatorio_compresslevel=None,
+            _relatorio_chunksize=64,
+            _relatorio_zip64=False,
+            _relatorio_compression_method=zipfile.ZIP_DEFLATED,
+            **kwargs):
         "creates the RelatorioStream."
-        serializer = OOSerializer(self._source, self._files)
+        serializer = OOSerializer(
+            self._source, self._files,
+            compresslevel=_relatorio_compresslevel,
+            zip64=_relatorio_zip64,
+            chunksize=_relatorio_chunksize,
+            compression_method=_relatorio_compression_method)
         kwargs['__relatorio_make_href'] = ImageHref(serializer, kwargs)
         kwargs['__relatorio_make_dimension'] = ImageDimension(self.namespaces)
         kwargs['__relatorio_guess_type'] = self._guess_type
@@ -1039,9 +1049,10 @@ class Manifest(object):
 
 
 class _AbstractZipWriteSplitStream(object):
-    def __init__(self, zipfile, chunksize=64):
+    def __init__(self, zipfile, chunksize=64, zip64=False):
         self.zipfile = zipfile
         self.chunksize = chunksize
+        self.zip64 = zip64
 
     def open(self, zinfo):
         raise NotImplementedError
@@ -1088,7 +1099,8 @@ if sys.version_info >= (3, 6):
 
         def flush(self):
             if not self._fp:
-                self._fp = self.zipfile.open(self._zinfo, mode='w')
+                self._fp = self.zipfile.open(
+                    self._zinfo, mode='w', force_zip64=self.zip64)
             self._fp.write(b''.join(self._buffer))
             self._buffer.clear()
 else:
@@ -1116,12 +1128,17 @@ else:
 
 class OOSerializer:
 
-    def __init__(self, source, files, chunksize=64):
+    def __init__(self, source, files, chunksize=64,
+            compresslevel=None, zip64=False,
+            compression_method=zipfile.ZIP_DEFLATED):
         self.inzip = get_zip_file(source)
         self.manifest = Manifest(self.inzip.read(MANIFEST))
         self.xml_serializer = genshi.output.XMLSerializer()
         self._files = files
         self.chunksize = chunksize
+        self.compresslevel = None
+        self.zip64 = zip64
+        self.compression_method = compression_method
         self.outzip = None
         self._deferred = []
 
@@ -1131,7 +1148,8 @@ class OOSerializer:
         else:
             result = out
         self.outzip = zipfile.ZipFile(
-            result, mode='w', compression=zipfile.ZIP_DEFLATED)
+            result, mode='w', compression=self.compression_method,
+            compresslevel=self.compresslevel)
         files = {}
         now = time.localtime()[:6]
         manifest_info = None
@@ -1152,7 +1170,7 @@ class OOSerializer:
             else:
                 self.outzip.writestr(f_info, self.inzip.read(f_info.filename))
 
-        writer = _ZipWriteSplitStream(self.outzip, self.chunksize)
+        writer = _ZipWriteSplitStream(self.outzip, self.chunksize, self.zip64)
         output_encode(
             self.xml_serializer(writer(stream)), encoding=encoding, out=writer)
 

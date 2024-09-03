@@ -49,6 +49,32 @@ And thus here is our invoice, generated through relatorio:
 
 .. image:: basic_generated.png
 
+Advanced zip options
+--------------------
+
+It can happen that the document being generated result in a file which
+uncompressed size is bigger than 2GiB. The default settings of Python's
+`zipfile library`_ do not allow to generate those files.
+
+To circumvent this issue, opendocument templates support additional parameters
+to the ``generate`` method. Those parameters are:
+
+:_relatorio_compresslevel: This parameter defines the *compresslevel* parameter
+                           of the underlying Zipfile_ call.
+
+:_relatorio_chunksize: This parameter defines the size of each chunk of data
+                       streamed to the underlying Zipfile_ object.
+
+:_relatorio_zip64: This parameter forces the handling of ZIP64 extensions.
+                   It should be set to true if the size of the file may be
+                   bigger than 2GiB.
+
+:_relatorio_compression_method: This parameter defines the *compression*
+                                paramater of the underlygin Zipfile_ call.
+
+.. _`zipfile library`: https://docs.python.org/3/library/zipfile.html
+.. _Zipfile: https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile
+
 One step further: OpenOffice Calc and OpenOffice Impress templates
 ------------------------------------------------------------------
 

@@ -1,3 +1,5 @@
+* Allow setting zip file generation options on opendocument templates
+
 0.10.2 - 20240421
 -----------------
 * Defer files added to serializer before call
