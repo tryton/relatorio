@@ -3,6 +3,7 @@
 # this repository contains the full copyright notices and license terms.
 import os
 import unittest
+import zipfile
 from io import BytesIO, StringIO
 
 import lxml.etree
@@ -419,6 +420,16 @@ class TestOOTemplating(unittest.TestCase):
         self.assertTrue('Møller' in rendered)
         self.assertTrue('Dog eat Dog' in rendered)
         self.assertTrue('Felix da housecat' in rendered)
+
+    def test_render(self):
+        "Testing that content get rendered"
+        rendered = self.oot.generate(**self.data).render()
+        self.assertTrue(zipfile.is_zipfile(rendered))
+        rendered_zip = zipfile.ZipFile(rendered)
+        self.assertLessEqual(
+            {'mimetype', 'styles.xml', 'manifest.rdf', 'content.xml',
+                'meta.xml', 'settings.xml', 'META-INF/manifest.xml'},
+            set(rendered_zip.namelist()))
 
     def test_filters(self):
         "Testing the filters with the Translator filter"
