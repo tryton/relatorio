@@ -1147,9 +1147,12 @@ class OOSerializer:
             result = BytesIO()
         else:
             result = out
+        zip_options = {}
+        if sys.version_info >= (3, 7):
+            zip_options['compresslevel'] = self.compresslevel
         self.outzip = zipfile.ZipFile(
             result, mode='w', compression=self.compression_method,
-            compresslevel=self.compresslevel)
+            **zip_options)
         files = {}
         now = time.localtime()[:6]
         manifest_info = None
