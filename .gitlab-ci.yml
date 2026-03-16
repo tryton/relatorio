@@ -43,9 +43,9 @@ check-isort:
 check-dist:
   extends: .check
   before_script:
-    - pip install twine
+    - pip install build twine
   script:
-    - python setup.py sdist
+    - pyproject-build
     - twine check dist/*
 
 .test:

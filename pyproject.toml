@@ -1,0 +1,56 @@
+[build-system]
+requires = ['hatchling >= 1', 'hatch-tryton']
+build-backend = 'hatchling.build'
+
+[project]
+name = 'relatorio'
+dynamic = ['version', 'authors']
+dependencies = [
+    'Genshi >= 0.5',
+    'lxml >= 2.0',
+    ]
+requires-python= '>=3.5'
+maintainers = [
+    {name = "Tryton", email = "foundation@tryton.org"},
+    ]
+description = "A templating library able to output odt and pdf files"
+readme = 'README.rst'
+license = 'GPL-3.0-or-later'
+license-files = ['LICENSE', 'COPYRIGHT']
+keywords = ["templating", "OpenDocument", "PDF"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing",
+    ]
+
+[project.scripts]
+relatorio-render = 'relatorio.render:run'
+
+[project.optional-dependencies]
+chart = [
+    'pycha >= 0.4.0',
+    'pyyaml',
+    # pycairo
+    ]
+fodt = [
+    'python-magic',
+    ]
+
+[project.urls]
+homepage = "https://www.tryton.org/"
+documentation = "https://docs.tryton.org/relatorio"
+changelog = "https://docs.tryton.org/relatorio/releases.html"
+forum = "https://discuss.tryton.org/tags/relatorio"
+issues = "https://bugs.tryton.org/relatorio"
+repository = "https://code.tryton.org/relatorio"
+
+[tool.hatch.version]
+path = 'relatorio/__init__.py'
+
+[tool.hatch.build]
+packages = ['relatorio']
+
+[tool.hatch.metadata.hooks.tryton]
+copyright = 'COPYRIGHT'
