@@ -33,11 +33,6 @@ import relatorio
 from relatorio.reporting import MIMETemplateLoader, Report
 from relatorio.templates.base import RelatorioStream
 
-try:
-    from relatorio.templates.chart import Template as ChartTemplate
-except ImportError:
-    ChartTemplate = None
-
 __metaclass__ = type
 warnings.filterwarnings('always', module='relatorio.templates.opendocument')
 
@@ -104,8 +99,6 @@ class ImageHref:
         bitstream, mimetype = expr[:2]
         if isinstance(bitstream, Report):
             bitstream = bitstream(**self.context).render()
-        elif ChartTemplate and isinstance(bitstream, ChartTemplate):
-            bitstream = bitstream.generate(**self.context).render()
         elif not hasattr(bitstream, 'seek') or not hasattr(bitstream, 'read'):
             bitstream = BytesIO(bitstream)
         if bitstream:

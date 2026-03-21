@@ -29,9 +29,6 @@ if __name__ == '__main__':
     print("done")
 
     print("generating output_complicated.odt... ", end='')
-    # Add a chart to the invoice
-    inv['chart'] = (
-        Report(abspath(join(pwd, 'pie_chart')), 'image/png'), 'image/png')
     report = Report(abspath(join(pwd, 'complicated.odt')), ODT_MIME)
     try:
         content = report(o=inv).render().getvalue()

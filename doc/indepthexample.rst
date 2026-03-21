@@ -101,37 +101,6 @@ And so here is our rendered template:
 Note that the type of data is correctly set even though we did not have
 anything to do.
 
-Everybody loves charts
-----------------------
-
-Now we would like to make our basic report a bit more colorful, so let's add a
-little chart. We are using PyCha_ to generate them from our :file:`pie_chart`
-template:
-
-.. include:: ../examples/pie_chart
-    :literal:
-
-.. _PyCha: https://pypi.org/project/pycha/
-
-Once again we are using the same syntax as Genshi but this time this is a
-TextTemplate_. This file follow the YAML_ format thus we can render it into a
-data structure that will be sent to PyCha:
-
-    * the options dictionary will be sent to PyCha as-is
-    * the dataset in the chart dictionary is sent to PyCha through its
-      ``.addDataset`` method.
-
-.. _TextTemplate: https://genshi.edgewall.org/wiki/Documentation/text-templates.html
-.. _YAML: https://yaml.org/
-
-If you need more information about those go to the `pycha website`_.
-
-.. _pycha website: https://pypi.org/project/pycha/
-
-And here is the result:
-
-.. image:: pie.png
-
 A (not-so) real example
 -----------------------
 

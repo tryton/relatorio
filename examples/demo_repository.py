@@ -16,12 +16,8 @@ repository.add_report(Invoice, ODT_MIME,
 repository.add_report(Invoice, ODS_MIME, 'pivot.ods', report_name='pivot')
 repository.add_report(Invoice, ODP_MIME,
                       'presentation.odp', report_name='presentation')
-repository.add_report(Invoice, 'image/png', 'pie_chart', report_name='pie')
 
 if __name__ == '__main__':
-    # Add a chart to the invoice
-    inv['chart'] = repository.by_id(Invoice, 'pie')[:2]
-
     # Generate all reports on the invoice class
     for report_name, ext in (('basic', '.odt'),
                              ('complicated', '.odt'),
