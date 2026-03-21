@@ -5,23 +5,20 @@ import os
 
 
 def get_info():
+    import json
     import subprocess
-    import sys
 
     module_dir = os.path.dirname(os.path.dirname(__file__))
 
     info = dict()
 
-    result = subprocess.run(
-        [sys.executable, 'setup.py', '--name', '--description'],
-        stdout=subprocess.PIPE, check=True, cwd=module_dir)
-    info['name'], info['description'] = (
-        result.stdout.decode('utf-8').strip().splitlines())
-
-    result = subprocess.run(
-        [sys.executable, 'setup.py', '--version'],
-        stdout=subprocess.PIPE, check=True, cwd=module_dir)
-    info['version'] = result.stdout.decode('utf-8').strip()
+    metadata_cmd = 'python -m build --quiet --metadata'
+    metadata = subprocess.check_output(
+        metadata_cmd, shell=True, encoding='utf-8', cwd=module_dir).strip()
+    metadata = json.loads(metadata)
+    info['name'] = metadata['name']
+    info['description'] = metadata['summary']
+    info['version'] = metadata['version']
 
     return info
 
