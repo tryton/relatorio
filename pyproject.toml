@@ -30,9 +30,9 @@ relatorio-render = 'relatorio.render:run'
 
 [project.optional-dependencies]
 chart = [
+    'pycairo',
     'pycha >= 0.4.0',
     'pyyaml',
-    # pycairo
     ]
 fodt = [
     'python-magic',
