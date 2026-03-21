@@ -57,7 +57,7 @@ class CairoSerializer:
         else:
             result = out
         yml = StringIO(_encode(self.text_serializer(stream)))
-        chart_yaml = yaml.load(yml.read())
+        chart_yaml = yaml.safe_load(yml.read())
         chart_info = chart_yaml['chart']
         chart_type = chart_info['output_type']
         if chart_type == 'png':

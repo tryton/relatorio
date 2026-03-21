@@ -32,7 +32,7 @@ relatorio-render = 'relatorio.render:run'
 chart = [
     'pycairo',
     'pycha >= 0.4.0',
-    'pyyaml',
+    'pyyaml >= 5.3',
     ]
 fodt = [
     'python-magic',
