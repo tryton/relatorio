@@ -13,11 +13,11 @@ requires-python= '>=3.9'
 maintainers = [
     {name = "Tryton", email = "foundation@tryton.org"},
     ]
-description = "A templating library able to output odt and pdf files"
+description = "A templating library able to output odt files"
 readme = 'README.rst'
 license = 'GPL-3.0-or-later'
 license-files = ['LICENSE', 'COPYRIGHT']
-keywords = ["templating", "OpenDocument", "PDF"]
+keywords = ["templating", "OpenDocument"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
