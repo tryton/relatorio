@@ -63,16 +63,16 @@ check-dist:
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
-      junit: .tox/junit.xml
+      junit: ${CI_PROJECT_DIR}/junit.xml
       coverage_report:
         coverage_format: cobertura
-        path: .tox/coverage.xml
+        path: ${CI_PROJECT_DIR}/coverage.xml
 
 test-tox-python:
   extends: .test-tox
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/python:${PYTHON_VERSION}
   script:
-    - tox -e "py${PYTHON_VERSION/./}" -- -v --output-file junit.xml
+    - tox -e "py${PYTHON_VERSION/./}" -- -v --output-file "${CI_PROJECT_DIR}/junit.xml"
   parallel:
     matrix:
       - PYTHON_VERSION: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -81,4 +81,4 @@ test-tox-pypy:
   extends: .test-tox
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/pypy:3
   script:
-    - tox -e pypy3 -- -v --output-file junit.xml
+    - tox -e pypy3 -- -v --output-file "${CI_PROJECT_DIR}/junit.xml"
