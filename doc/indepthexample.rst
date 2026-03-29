@@ -14,8 +14,8 @@ simplicity:
 .. include:: ../examples/common.py
     :literal:
 
-Create a simple OpenOffice Writer template
-------------------------------------------
+Create a simple LibreOffice Writer template
+-------------------------------------------
 
 Let's start with the simple template defined in :file:`basic.odt`.
 
@@ -34,7 +34,7 @@ Text Placeholder_ containing ``o.customer.name``. This is where you can see our
 Genshi_ heritage. In fact, all reports using relatorio are subclasses of
 Genshi's Template. Thus you can use most of the goodies provided by Genshi.
 
-.. _Placeholder: https://wiki.openoffice.org/wiki/Documentation/OOoAuthors_User_Manual/Writer_Guide/Using_placeholder_fields
+.. _Placeholder: https://help.libreoffice.org/latest/en-US/text/swriter/01/04090003.html
 .. _Genshi: https://genshi.edgewall.org/
 
 To iterate over a list you must use an hyperlink (created through
@@ -75,8 +75,8 @@ to the ``generate`` method. Those parameters are:
 .. _`zipfile library`: https://docs.python.org/3/library/zipfile.html
 .. _Zipfile: https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile
 
-One step further: OpenOffice Calc and OpenOffice Impress templates
-------------------------------------------------------------------
+One step further: LibreOffice Calc and LibreOffice Impress templates
+--------------------------------------------------------------------
 
 Just like we defined a Writer template it is just as easy to define a
 Calc/Impress template. Let's take a look at :file:`pivot.ods`.
@@ -90,7 +90,7 @@ of the invoice object:
     * or through the hyperlink specification I explained earlier.
 
 Note that there is another tab in this Calc file used to make some data
-aggregation thanks to the `data pilot`_ possibilities of OpenOffice.
+aggregation thanks to the `data pilot`_ possibilities of LibreOffice.
 
 .. _data pilot: https://help.libreoffice.org/latest/en-US/text/scalc/guide/datapilot.html
 
@@ -140,7 +140,7 @@ Now that we have everything to start working on our complicated template
 
 .. image:: complicated.png
 
-In this example, you can see that not only the openoffice plugin supports the
+In this example, you can see that not only the libreoffice plugin supports the
 ``for directive``, it also supports the ``if directive`` and the ``choose directive``
 that way you can choose to render or not some elements.
 

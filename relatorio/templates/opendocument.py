@@ -71,7 +71,7 @@ XML_INVALID_CHAR_EXPR = re.compile(
 
 # A note regarding OpenDocument namespaces:
 #
-# The current code assumes the original OpenOffice document uses default
+# The current code assumes the original LibreOffice document uses default
 # namespace prefix ("table", "xlink", "draw", ...). We derive the actual
 # namespaces URIs from their prefix, instead of the other way round. This has
 # the advantage that if a new version of the format use different namespaces

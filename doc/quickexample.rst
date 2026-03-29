@@ -1,7 +1,7 @@
 Quick Example
 =============
 
-In this page we will show you how you can create OpenOffice documents using Relatorio.
+In this page we will show you how you can create LibreOffice documents using Relatorio.
 
 Data
 -----
