@@ -12,7 +12,9 @@ def get_info():
 
     info = dict()
 
-    metadata_cmd = 'python -m build --quiet --metadata'
+    metadata_cmd = 'python -m build -qq --metadata'
+    if os.environ.get('DOC_NO_ISOLATION'):
+        metadata_cmd += ' --no-isolation'
     metadata = subprocess.check_output(
         metadata_cmd, shell=True, encoding='utf-8', cwd=module_dir).strip()
     metadata = json.loads(metadata)
