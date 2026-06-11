@@ -986,18 +986,14 @@ def fod2od(source):
 
 def extract_images(child, namespaces, start=0):
     "Extract draw:image with binary-data and replace by href"
-    import magic
+    import puremagic
     images = []
     for i, image in enumerate(
             child.xpath('//draw:image', namespaces=namespaces), start):
         binary_data, = image.xpath(
             './office:binary-data', namespaces=namespaces)
         data = base64.b64decode(binary_data.text)
-        if hasattr(magic, 'from_buffer'):
-            mime_type = magic.from_buffer(data, mime=True)
-        else:
-            # Not python-magic but file-magic
-            mime_type = magic.detect_from_content(data).mime_type
+        mime_type = puremagic.from_string(data, mime=True)
         name = 'Pictures/image%s%s' % (
             i, mimetypes.guess_extension(mime_type))
         image.remove(binary_data)

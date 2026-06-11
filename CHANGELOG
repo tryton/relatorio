@@ -1,3 +1,4 @@
+* Replace python-magic dependency by puremagic
 * Remove support for chart template
 * Remove support for PDF
 

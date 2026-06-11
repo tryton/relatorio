@@ -30,7 +30,7 @@ relatorio-render = 'relatorio.render:run'
 
 [project.optional-dependencies]
 fodt = [
-    'python-magic',
+    'puremagic',
     ]
 
 [project.urls]
