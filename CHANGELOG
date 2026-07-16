@@ -1,3 +1,5 @@
+Version 1.0.0 - 2026-07-16
+--------------------------
 * Replace python-magic dependency by puremagic
 * Remove support for chart template
 * Remove support for PDF
